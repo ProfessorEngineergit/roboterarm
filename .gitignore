@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.npz
+modell/
+.roboterarm/
+.DS_Store
+*.log
+node_modules/

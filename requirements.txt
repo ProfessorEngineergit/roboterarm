@@ -1,0 +1,14 @@
+# Kern: die Simulation (ROBOTERARM_BACKEND=sim) läuft bereits mit nur numpy.
+numpy>=1.24
+
+# --- Hardware (nur auf dem Board / Radxa ROCK Pi 4) ---
+smbus2>=0.4                       # PCA9685 Servotreiber über I2C
+opencv-python-headless>=4.8       # USB-Kamera (UVC) + Bildverarbeitung
+
+# --- ML (optional, On-Device Training/Inferenz) ---
+# tflite-runtime ist nur als aarch64-Wheel verfügbar (Board), nicht auf macOS.
+tflite-runtime>=2.13 ; platform_machine == "aarch64"
+
+# --- Dienst / Weboberfläche ---
+flask>=3.0
+flask-sock>=0.7                   # WebSocket-Brücke für die Scratch-Extension

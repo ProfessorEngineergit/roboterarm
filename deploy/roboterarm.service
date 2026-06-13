@@ -1,0 +1,18 @@
+[Unit]
+Description=roboterarm Web-Dienst (Steuerung, Kamera, KI)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=__USER__
+WorkingDirectory=__ROOT__
+Environment=PYTHONPATH=__ROOT__
+# Für echte Hardware das Backend automatisch wählen (PCA9685/USB-Kamera).
+# Zum Testen ohne Hardware: Environment=ROBOTERARM_BACKEND=sim
+ExecStart=/usr/bin/python3 __ROOT__/service/robot_service.py --host 0.0.0.0 --port 8765
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
