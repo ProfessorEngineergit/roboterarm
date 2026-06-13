@@ -1,0 +1,49 @@
+// Kamera-Clip für den Roboterarm — alternatives "Kinder-Teil" zum Selberdrucken.
+// Hält die kleine USB-Kamera an der drehenden Säule/Schulter (Auge dreht mit der Basis).
+// Parametrisch: Maße an die eigene Kamera anpassen und mit OpenSCAD als STL exportieren.
+//
+//   openscad -o kamera_clip.stl kamera_clip.scad
+//
+// Druck: PLA, 0.2 mm, 20 % Infill, ohne Stützen (flach aufs Bett legen).
+
+// ---- Parameter (mm) ----
+kamera_breite   = 28;   // Breite der Kameraplatine/-fassung
+kamera_dicke    = 9;    // Dicke der Kamera
+wand            = 2.4;  // Wandstärke
+lippe           = 2.0;  // Haltelippe vorn
+platte_dicke    = 3.0;  // Montageplatte
+platte_laenge   = 30;
+schraubloch     = 3.4;  // M3 Durchgang
+lochabstand     = 20;
+
+$fn = 48;
+
+module montageplatte() {
+    difference() {
+        cube([platte_laenge, kamera_breite + 2*wand, platte_dicke]);
+        for (dx = [-1, 1])
+            translate([platte_laenge/2 + dx*lochabstand/2,
+                       (kamera_breite + 2*wand)/2, -1])
+                cylinder(h = platte_dicke + 2, d = schraubloch);
+    }
+}
+
+module halter() {
+    // U-förmige Fassung für die Kamera
+    aussen_b = kamera_breite + 2*wand;
+    aussen_t = kamera_dicke + 2*wand;
+    difference() {
+        cube([aussen_t, aussen_b, kamera_dicke + wand + lippe]);
+        translate([wand, wand, wand])
+            cube([kamera_dicke, kamera_breite, kamera_dicke + lippe + 1]);
+        // Fenster für die Linse
+        translate([-1, aussen_b/2 - 6, wand + 3])
+            cube([aussen_t + 2, 12, kamera_dicke]);
+    }
+}
+
+union() {
+    montageplatte();
+    translate([platte_laenge - wand, 0, platte_dicke])
+        halter();
+}

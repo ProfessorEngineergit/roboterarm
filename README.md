@@ -21,6 +21,18 @@ Hardware in **Simulation** — auf jedem Laptop.
 - 🔁 **Sim/Hardware automatisch:** identischer Code am Laptop und am Board.
 - 🧪 Test-Suite, CI, Packaging, Deployment (`install.sh` + systemd).
 
+## 🛠️ Bauen & Drucken (es wird nichts gekauft)
+
+Die Arm-Teile (**EEZYbotARM MK2**) werden von den Betreuer:innen **vorab** gedruckt; jedes
+Kind druckt im Workshop **genau ein eigenes Teil** — sein **Namensschild** — als 3D-Druck-Erlebnis:
+
+```bash
+python3 hardware/3d-druck/namensschild.py MAX     # -> namensschild_MAX.stl (drucken, fertig)
+```
+
+Vollständige, eigenständige **Bau- & Druckanleitung** (Druckeinstellungen, Teileliste, Montage):
+**[hardware/3d-druck/README.md](hardware/3d-druck/README.md)**.
+
 ## Schnellstart (Simulation — ohne Hardware, nur `numpy`)
 
 ```bash
@@ -75,13 +87,15 @@ examples/          tanz, find_ball, sortieren, objekt_lernen, koordinaten
 tests/             Test-Suite (Simulation)
 deploy/            systemd-Unit
 docs/              Architektur, API, Hardware, Curriculum, Ebenen
+hardware/3d-druck/ 3D-Dateien + Bauanleitung (EEZYbotARM vorab, Namensschild fürs Kind)
 calibrate.py       Servo-Kalibrier-Assistent      install.sh   Inbetriebnahme
 ```
 
 ## Hardware
 
 Radxa ROCK Pi 4 SE + Arducam USB-UVC + PCA9685 + EEZYbotARM MK2 (3× MG996R + SG90).
-Inbetriebnahme, Verdrahtung, Kalibrierung & Fehlersuche: **[docs/hardware.md](docs/hardware.md)**.
+- **Bauen & 3D-Druck** (Arm vorab, ein Teil pro Kind, nichts kaufen): **[hardware/3d-druck/README.md](hardware/3d-druck/README.md)**
+- **Elektronik, Verkabelung, Kalibrierung & Fehlersuche:** **[docs/hardware.md](docs/hardware.md)**
 
 ```bash
 ./install.sh        # Pakete, Deps, I2C, optional Autostart (systemd)
