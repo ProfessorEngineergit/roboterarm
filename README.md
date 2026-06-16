@@ -93,7 +93,7 @@ calibrate.py       Servo-Kalibrier-Assistent      install.sh   Inbetriebnahme
 
 ## Hardware
 
-Radxa ROCK Pi 4 SE + Arducam USB-UVC + PCA9685 + EEZYbotARM MK2 (3× MG996R + SG90).
+Radxa ROCK Pi 4 SE + InnoMaker 16 MP USB-UVC-Kamera + PCA9685 + EEZYbotARM MK2 (3× MG996R + SG90).
 - **Bauen & 3D-Druck** (Arm vorab, ein Teil pro Kind, nichts kaufen): **[hardware/3d-druck/README.md](hardware/3d-druck/README.md)**
 - **Elektronik, Verkabelung, Kalibrierung & Fehlersuche:** **[docs/hardware.md](docs/hardware.md)**
 

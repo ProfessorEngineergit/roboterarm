@@ -1,7 +1,25 @@
 # Hardware-Inbetriebnahme (Radxa ROCK Pi 4 SE)
 
-Zielplattform: **Radxa ROCK Pi 4 Model SE** (RK3399-T, keine NPU) + **Arducam 5 MP USB-UVC-Kamera**
-+ **PCA9685** 16-Kanal-Servotreiber + **EEZYbotARM MK2** (3× MG996R/MG995 + 1× SG90).
+Zielplattform: **Radxa ROCK Pi 4 Model SE** (RK3399-T, keine NPU) + **InnoMaker 16 MP USB-UVC-Kamera**
+(IMX298, Autofokus) + **PCA9685** 16-Kanal-Servotreiber + **EEZYbotARM MK2** (3× MG996R/MG995 + 1× SG90).
+
+## Stückliste / Einkaufsliste
+
+**Vorhanden (bestätigt):**
+- Radxa ROCK Pi 4 Model SE (Board)
+- InnoMaker 16 MP USB-UVC-Kamera (IMX298, Autofokus)
+- PCA9685 16-Kanal-PWM-/Servotreiber
+
+**Noch zu beschaffen (Pflicht):**
+- **3× MG996R** (Achsen) + **1× SG90** (Greifer)
+- **Servo-Netzteil 5–6 V / ≥4 A** (besser 5–6 A) + Hohlstecker-Schraubklemmen-Adapter
+- **microSD ≥32 GB** (Class 10 / A1) — Boot-Medium des Boards
+- **USB-C-Netzteil 5 V/3 A** (≥15 W) fürs Board
+- **Jumperkabel** (Buchse-Buchse, ~4×) für I²C (SDA/SCL/VCC/GND)
+
+**Zusammenbau:** kleine **M3/M4**-Schrauben/Muttern (EEZYbotARM-Stückliste; vieles liegt den Servos bei).
+
+**Schon vorhanden / nicht kaufen:** 3D-Drucker + **PLA-Filament**, EEZYbotARM-STLs (kostenloser Download).
 
 ## Verdrahtung
 
