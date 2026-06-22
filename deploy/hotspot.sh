@@ -24,9 +24,10 @@ if [[ "${1:-}" == "--aus" || "${1:-}" == "--off" ]]; then
 fi
 
 NUMMER="${1:-1}"
-SSID="${2:-Roboterarm-${NUMMER}}"
+NN="$(printf '%02d' "$((10#$NUMMER))")"   # 1 -> 01 …
+SSID="${2:-Roboterarm-${NN}}"
 PSK="${3:-roboterarm}"            # WPA2 braucht mind. 8 Zeichen
-HOSTNAME_NEU="arm${NUMMER}"
+HOSTNAME_NEU="roboterarm-${NN}"  # gleiches Schema wie setup_station.sh
 
 if [[ ${#PSK} -lt 8 ]]; then
   echo "FEHLER: Passwort muss mindestens 8 Zeichen haben (war: '${PSK}')." >&2
