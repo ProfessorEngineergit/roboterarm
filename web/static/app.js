@@ -35,8 +35,9 @@ async function init() {
     <main><div id="inhalt"></div></main>
     <div id="toast" class="toast"></div>`;
 
-  const navs = ["regler", "bloecke", "scratch", "python"];
-  const titel = { regler: "🎚 Regler", bloecke: "🧩 Eigene Blöcke", scratch: "🐱 Scratch", python: "🐍 Python" };
+  const navs = ["regler", "bloecke", "scratch", "python", "kalib"];
+  const titel = { regler: "🎚 Regler", bloecke: "🧩 Eigene Blöcke", scratch: "🐱 Scratch",
+                  python: "🐍 Python", kalib: "⚙ Kalibrieren" };
   document.getElementById("nav").innerHTML = navs.map(
     (n) => `<button id="nav_${n}" onclick="zeigeTab('${n}')">${titel[n]}</button>`).join("");
 
@@ -58,7 +59,8 @@ function zeigeTab(name) {
   tab = name; stopPoll();
   document.querySelectorAll("#nav button").forEach((b) => b.classList.remove("aktiv"));
   document.getElementById("nav_" + name).classList.add("aktiv");
-  ({ regler: renderRegler, bloecke: renderBloecke, scratch: renderScratch, python: renderPython }[name])();
+  ({ regler: renderRegler, bloecke: renderBloecke, scratch: renderScratch, python: renderPython,
+     kalib: renderKalib }[name])();
 }
 
 // ------------------------------- NOT-AUS -------------------------------
@@ -310,6 +312,96 @@ async function codeTick() {
   document.getElementById("konsole").textContent = (r.zeilen || []).join("\n") || "…";
   if (!r.laeuft) stopPoll();
 }
+
+// ----------------------------- ⚙ Kalibrieren -----------------------------
+let KALIB_TEST = {};      // letzter Test-Reglerwert je Gelenk
+async function renderKalib() {
+  const k = await API.get("/api/kalib");
+  const joints = Object.entries(k.gelenke).map(([n, g]) => kalibKarte(n, g)).join("");
+  document.getElementById("inhalt").innerHTML = `
+    <div class="karte"><h2>⚙ Kalibrieren — für Betreuer:innen</h2>
+      <p class="klein">Pro Gelenk den <b>Test-Regler</b> bewegen (fährt den Servo <b>ohne Limit</b>).
+      Endpunkte anfahren → <b>„= jetzt"</b> übernimmt den Wert als min bzw. max. Mitte = Home.
+      Dreht es verkehrt herum → <b>Umkehren</b>. Pro Gelenk <b>Übernehmen</b>, am Ende <b>💾 Speichern</b>.</p>
+      <p class="klein" style="color:var(--warn)">⚠ Fährt ein Servo in den Anschlag und summt: Test-Regler
+      zurückziehen oder oben <b>■ NOT-AUS</b> (schaltet alle stromlos).</p>
+    </div>
+    ${joints}
+    <div class="karte"><h2>Greifer offen / zu</h2>
+      <div class="reihe">
+        offen <input type="number" id="gr_auf" value="${k.greifer_auf}">
+        <button onclick="kalibTest('greifer', document.getElementById('gr_auf').value)">testen</button>
+        &nbsp; zu <input type="number" id="gr_zu" value="${k.greifer_zu}">
+        <button onclick="kalibTest('greifer', document.getElementById('gr_zu').value)">testen</button>
+        <button class="primary" onclick="kalibGreifer()">übernehmen</button>
+      </div>
+    </div>
+    <div class="karte"><div class="reihe">
+      <button class="primary gross" onclick="kalibSpeichern()">💾 Speichern (dauerhaft)</button>
+      <span class="klein" id="kalib_msg"></span></div>
+      <p class="klein">Speichert nach <code>~/.roboterarm/config.json</code> — gilt nach Neustart weiter.</p>
+    </div>`;
+}
+function kalibKarte(n, g) {
+  return `<div class="karte"><h2>${n} — Kanal ${g.kanal}</h2>
+    <div class="reihe">
+      <label class="schalter" title="Drehrichtung umkehren">
+        <input type="checkbox" ${g.invertiert ? "checked" : ""} onchange="kalibInvert('${n}', this.checked)">
+        <span class="schieber"></span></label> Drehrichtung umkehren
+    </div>
+    <div class="gelenk" style="margin-top:12px">
+      <label><span>Test-Regler (ohne Limit)</span> <b id="kt_${n}">${Math.round(g.home)}°</b></label>
+      <input type="range" min="0" max="180" value="${g.home}" oninput="kalibTestLive('${n}', this.value)">
+    </div>
+    <div class="reihe">
+      min <input type="number" id="kmin_${n}" value="${g.min_winkel}">
+      <button onclick="kalibCapture('${n}','kmin_${n}')">= jetzt</button>
+      &nbsp; max <input type="number" id="kmax_${n}" value="${g.max_winkel}">
+      <button onclick="kalibCapture('${n}','kmax_${n}')">= jetzt</button>
+    </div>
+    <div class="reihe">
+      home <input type="number" id="khome_${n}" value="${g.home}">
+      <button onclick="kalibCapture('${n}','khome_${n}')">= jetzt</button>
+      &nbsp; offset <input type="number" id="koff_${n}" value="${g.offset}">
+      <button class="primary" onclick="kalibUebernehmen('${n}')">übernehmen</button>
+    </div></div>`;
+}
+let ktLast = {};
+function kalibTestLive(n, val) {
+  document.getElementById("kt_" + n).textContent = Math.round(val) + "°";
+  KALIB_TEST[n] = Number(val);
+  const now = Date.now(); if (now - (ktLast[n] || 0) < 80) return; ktLast[n] = now;
+  API.post("/api/kalib/test", { name: n, winkel: Number(val) });
+}
+function kalibCapture(n, feldId) {
+  const v = KALIB_TEST[n] != null ? KALIB_TEST[n] : Number(document.getElementById("kt_" + n).textContent);
+  document.getElementById(feldId).value = Math.round(v);
+}
+async function kalibTest(name, winkel) { await API.post("/api/kalib/test", { name, winkel: Number(winkel) }); }
+async function kalibInvert(n, an) {
+  await API.post("/api/kalib/set", { name: n, invertiert: an });
+  if (KALIB_TEST[n] != null) API.post("/api/kalib/test", { name: n, winkel: KALIB_TEST[n] });
+  kalibFlash(`${n}: Richtung ${an ? "umgekehrt" : "normal"}`);
+}
+async function kalibUebernehmen(n) {
+  await API.post("/api/kalib/set", { name: n,
+    min_winkel: Number(document.getElementById("kmin_" + n).value),
+    max_winkel: Number(document.getElementById("kmax_" + n).value),
+    home: Number(document.getElementById("khome_" + n).value),
+    offset: Number(document.getElementById("koff_" + n).value) });
+  kalibFlash(`${n}: übernommen`);
+}
+async function kalibGreifer() {
+  await API.post("/api/kalib/greifer", {
+    auf: Number(document.getElementById("gr_auf").value),
+    zu: Number(document.getElementById("gr_zu").value) });
+  kalibFlash("Greifer übernommen");
+}
+async function kalibSpeichern() {
+  const r = await API.post("/api/kalib/speichern");
+  kalibFlash(r.ok ? "💾 gespeichert: " + r.pfad : "Fehler beim Speichern");
+}
+function kalibFlash(t) { const m = document.getElementById("kalib_msg"); if (m) m.textContent = t; flash(t); }
 
 // -------------------------------- Helfer --------------------------------
 function flash(text) {

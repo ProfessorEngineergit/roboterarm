@@ -148,10 +148,12 @@ class ServoController:
         else:
             self.backend.abschalten(g.kanal)
 
-    def setze(self, name: str, ziel: float, sanft: bool = True, speed: float | None = None) -> float:
+    def setze(self, name: str, ziel: float, sanft: bool = True, speed: float | None = None,
+              grenzen: bool = True) -> float:
         if self.gestoppt.is_set() or not self.aktiv.get(name, True):   # NOT-AUS oder Servo aus
             return self.winkel[name]
-        ziel = self.grenzen(name, ziel)
+        if grenzen:                                  # bei Kalibrierung aus, um Endpunkte zu finden
+            ziel = self.grenzen(name, ziel)
         start = self.winkel[name]
         schrittweite = speed if (speed and speed > 0) else self.cfg.speed_grad_pro_schritt
         if not sanft or schrittweite <= 0:

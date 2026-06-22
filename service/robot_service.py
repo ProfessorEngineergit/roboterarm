@@ -223,6 +223,12 @@ class Handler(BaseHTTPRequestHandler):
 
         if p == "/api/status":
             return self._json(status())
+        if p == "/api/kalib":
+            g = {n: {"kanal": x.kanal, "min_winkel": x.min_winkel, "max_winkel": x.max_winkel,
+                     "home": x.home, "offset": x.offset, "invertiert": x.invertiert}
+                 for n, x in arm.cfg.gelenke.items()}
+            return self._json({"gelenke": g, "greifer_auf": arm.cfg.greifer_auf,
+                               "greifer_zu": arm.cfg.greifer_zu})
         if p == "/api/kamera.img":
             with sperre:
                 bild, typ = frame_bild(arm.kamera.frame())
@@ -328,6 +334,37 @@ class Handler(BaseHTTPRequestHandler):
             with sperre:
                 arm.servo(d["name"], an)
             return self._json(status())
+
+        # ---- Kalibrierung (grafisch in der Weboberfläche) ----
+        if p == "/api/kalib/test":              # Servo OHNE Winkelgrenzen fahren (Endpunkte finden)
+            if d.get("name") not in arm.cfg.gelenke:
+                return self._json({"fehler": "unbekanntes Gelenk"}, 400)
+            arm.weiter()
+            with sperre:
+                arm._ctrl.aktiv[d["name"]] = True
+                arm._ctrl.setze(d["name"], float(d.get("winkel", 90)), sanft=False, grenzen=False)
+            return self._json(status())
+        if p == "/api/kalib/set":               # Grenzen/Home/Offset/Richtung übernehmen (live)
+            name = d.get("name")
+            if name not in arm.cfg.gelenke:
+                return self._json({"fehler": "unbekanntes Gelenk"}, 400)
+            g = arm.cfg.gelenke[name]
+            for k in ("min_winkel", "max_winkel", "home", "offset"):
+                if d.get(k) is not None:
+                    setattr(g, k, float(d[k]))
+            if "invertiert" in d:
+                g.invertiert = bool(d["invertiert"])
+            return self._json({"ok": True})
+        if p == "/api/kalib/greifer":
+            if d.get("auf") is not None:
+                arm.cfg.greifer_auf = float(d["auf"])
+            if d.get("zu") is not None:
+                arm.cfg.greifer_zu = float(d["zu"])
+            return self._json({"ok": True})
+        if p == "/api/kalib/speichern":
+            from roboterarm.config import speichere_config
+            pfad = speichere_config(arm.cfg)
+            return self._json({"ok": True, "pfad": pfad})
         if p == "/api/home":
             with sperre:
                 arm.home()
