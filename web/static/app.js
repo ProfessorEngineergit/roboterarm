@@ -17,9 +17,19 @@ let pollers = [];
 let ABBRUCH = false;            // bricht laufende Block-/Warte-Sequenzen ab
 let PROGRAMM = [];              // Block-Programm (Tab „Eigene Blöcke")
 let WINKEL = {};                // letzte bekannte Gelenkwinkel (für das Live-Modell)
+let KALIBDATA = { gelenke: {} };// zuletzt geladene Kalibrierwerte (für Modell-Drehrichtung)
 
 function stopPoll() { pollers.forEach(clearInterval); pollers = []; }
 function poll(fn, ms) { fn(); pollers.push(setInterval(fn, ms)); }
+
+// Range-Regler „googly" füllen: linker Teil in Primärfarbe (CSS-Variable --pct).
+function sliderFill(el) {
+  const min = +el.min || 0, max = +el.max || 100;
+  const pct = max > min ? ((+el.value - min) / (max - min)) * 100 : 0;
+  el.style.setProperty("--pct", pct.toFixed(1) + "%");
+}
+function fuelleSlider() { document.querySelectorAll('input[type=range]').forEach(sliderFill); }
+document.addEventListener("input", (e) => { if (e.target.matches('input[type=range]')) sliderFill(e.target); });
 
 // --------------------------------- Start ---------------------------------
 window.addEventListener("DOMContentLoaded", init);
@@ -54,7 +64,7 @@ async function refreshStatus() {
     document.getElementById("backend").textContent = s.backend + " · " + s.projekt;
     document.getElementById("statusbar").innerHTML = Object.entries(s.winkel)
       .map(([k, v]) => `<span class="stat">${k} <b>${Math.round(v)}°</b></span>`).join("");
-    if (tab === "regler") zeichneArm();
+    if (tab === "kalib") zeichneArm();
   } catch (e) {}
 }
 
@@ -95,19 +105,13 @@ async function renderRegler() {
     </div>`;
   }).join("");
   document.getElementById("inhalt").innerHTML = `
-    <div class="raster">
-      <div class="karte modell-karte">
-        <h2>Live-Modell</h2>
-        <div id="armmodell" class="armmodell"></div>
+    <div class="karte"><h2>Gelenke direkt steuern</h2>${regler}
+      <div class="reihe">
+        <button class="primary" onclick="API.post('/api/home').then(refreshRegler)">🏠 Grundstellung</button>
+        <button onclick="API.post('/api/greifer',{aktion:'auf'}).then(refreshRegler)">✋ Greifer auf</button>
+        <button onclick="API.post('/api/greifer',{aktion:'zu'}).then(refreshRegler)">✊ Greifer zu</button>
       </div>
-      <div class="karte"><h2>Gelenke direkt steuern</h2>${regler}
-        <div class="reihe">
-          <button class="primary" onclick="API.post('/api/home').then(refreshRegler)">🏠 Grundstellung</button>
-          <button onclick="API.post('/api/greifer',{aktion:'auf'}).then(refreshRegler)">✋ Greifer auf</button>
-          <button onclick="API.post('/api/greifer',{aktion:'zu'}).then(refreshRegler)">✊ Greifer zu</button>
-        </div>
-        <div class="reihe">Tempo <input type="range" min="0" max="15" value="3" oninput="API.post('/api/tempo',{grad:Number(this.value)})"></div>
-      </div>
+      <div class="reihe">Tempo <input type="range" min="0" max="15" value="3" oninput="API.post('/api/tempo',{grad:Number(this.value)})"></div>
     </div>
     <div class="karte"><h2>Posen</h2>
       <div class="reihe">
@@ -123,7 +127,7 @@ async function renderRegler() {
         <span id="gehe_out" class="klein"></span>
       </div>
     </div>`;
-  zeichneArm();
+  fuelleSlider();
   poseListe();
 }
 async function refreshRegler() { if (tab === "regler") renderRegler(); }
@@ -133,8 +137,10 @@ function zeichneArm() {
   const box = document.getElementById("armmodell");
   if (!box) return;
   const W = WINKEL || {};
-  const schulter = W.schulter ?? 90, ellbogen = W.ellbogen ?? 90;
-  const basis = W.basis ?? 90, greifer = W.greifer ?? 35;
+  const inv = (n) => !!(KALIBDATA.gelenke && KALIBDATA.gelenke[n] && KALIBDATA.gelenke[n].invertiert);
+  const eff = (n, v) => inv(n) ? (180 - v) : v;     // Drehrichtung wie in der Kalibrierung
+  const schulter = eff("schulter", W.schulter ?? 90), ellbogen = eff("ellbogen", W.ellbogen ?? 90);
+  const basis = eff("basis", W.basis ?? 90), greifer = eff("greifer", W.greifer ?? 35);
   const S = 0.82, L1 = 61 * S, L2 = 80 * S, L3 = 80 * S;   // mm -> px (MK1)
   const bx = 120, bodenY = 232, topY = bodenY - L1;
   const rad = (d) => d * Math.PI / 180;
@@ -186,7 +192,6 @@ let rLast = 0;
 async function rSet(name, val) {
   document.getElementById("v_" + name).textContent = Math.round(val) + "°";
   WINKEL[name] = Number(val);
-  zeichneArm();                                   // Modell läuft live mit
   const now = Date.now(); if (now - rLast < 70) return; rLast = now;
   await API.post("/api/gelenk", { name, winkel: Number(val) });
 }
@@ -418,8 +423,14 @@ async function codeTick() {
 let KALIB_TEST = {};      // letzter Test-Reglerwert je Gelenk
 async function renderKalib() {
   const k = await API.get("/api/kalib");
+  KALIBDATA = k;
   const joints = Object.entries(k.gelenke).map(([n, g]) => kalibKarte(n, g)).join("");
   document.getElementById("inhalt").innerHTML = `
+    <div class="karte modell-karte"><h2>Live-Modell — passt sich beim Kalibrieren an</h2>
+      <div id="armmodell" class="armmodell"></div>
+      <p class="klein" style="margin-top:6px">Bewege unten die Test-Regler — das Modell läuft mit.
+      Stell die <b>Drehrichtung</b> so ein, dass das Modell zum echten Arm passt.</p>
+    </div>
     <div class="karte"><h2>⚙ Kalibrieren — für Betreuer:innen</h2>
       <p class="klein">Pro Gelenk den <b>Test-Regler</b> bewegen (fährt den Servo <b>ohne Limit</b>).
       Endpunkte anfahren → <b>„= jetzt"</b> übernimmt den Wert als min bzw. max. Mitte = Home.
@@ -442,6 +453,8 @@ async function renderKalib() {
       <span class="klein" id="kalib_msg"></span></div>
       <p class="klein">Speichert nach <code>~/.roboterarm/config.json</code> — gilt nach Neustart weiter.</p>
     </div>`;
+  zeichneArm();
+  fuelleSlider();
 }
 function kalibKarte(n, g) {
   return `<div class="karte"><h2>${n} — Kanal ${g.kanal}</h2>
@@ -471,6 +484,8 @@ let ktLast = {};
 function kalibTestLive(n, val) {
   document.getElementById("kt_" + n).textContent = Math.round(val) + "°";
   KALIB_TEST[n] = Number(val);
+  WINKEL[n] = Number(val);
+  zeichneArm();                                   // Modell läuft beim Kalibrieren mit
   const now = Date.now(); if (now - (ktLast[n] || 0) < 80) return; ktLast[n] = now;
   API.post("/api/kalib/test", { name: n, winkel: Number(val) });
 }
@@ -481,6 +496,8 @@ function kalibCapture(n, feldId) {
 async function kalibTest(name, winkel) { await API.post("/api/kalib/test", { name, winkel: Number(winkel) }); }
 async function kalibInvert(n, an) {
   await API.post("/api/kalib/set", { name: n, invertiert: an });
+  if (KALIBDATA.gelenke && KALIBDATA.gelenke[n]) KALIBDATA.gelenke[n].invertiert = an;
+  zeichneArm();                                   // Modell dreht sofort mit
   if (KALIB_TEST[n] != null) API.post("/api/kalib/test", { name: n, winkel: KALIB_TEST[n] });
   kalibFlash(`${n}: Richtung ${an ? "umgekehrt" : "normal"}`);
 }
