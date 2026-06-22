@@ -413,6 +413,9 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json(status())
             except KeyError as e:
                 return self._json({"fehler": str(e)}, 404)
+        if p == "/api/pose/loeschen":
+            arm.projekt.pose_loeschen(d.get("name", ""))
+            return self._json({"ok": True, "posen": arm.projekt.posen()})
 
         # ---- Aufnahme ----
         if p == "/api/aufnahme/start":

@@ -49,6 +49,13 @@ class Projekt:
     def pose(self, name: str) -> dict | None:
         return self._lade_posen().get(name)
 
+    def pose_loeschen(self, name: str):
+        posen = self._lade_posen()
+        if name in posen:
+            del posen[name]
+            with open(self._posen_pfad, "w", encoding="utf-8") as f:
+                json.dump(posen, f, ensure_ascii=False, indent=2)
+
     def posen(self) -> dict:
         return self._lade_posen()
 

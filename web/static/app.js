@@ -16,6 +16,7 @@ let tab = "regler";
 let pollers = [];
 let ABBRUCH = false;            // bricht laufende Block-/Warte-Sequenzen ab
 let PROGRAMM = [];              // Block-Programm (Tab „Eigene Blöcke")
+let WINKEL = {};                // letzte bekannte Gelenkwinkel (für das Live-Modell)
 
 function stopPoll() { pollers.forEach(clearInterval); pollers = []; }
 function poll(fn, ms) { fn(); pollers.push(setInterval(fn, ms)); }
@@ -49,9 +50,11 @@ async function init() {
 async function refreshStatus() {
   try {
     const s = await API.get("/api/status");
+    WINKEL = s.winkel;
     document.getElementById("backend").textContent = s.backend + " · " + s.projekt;
     document.getElementById("statusbar").innerHTML = Object.entries(s.winkel)
       .map(([k, v]) => `<span class="stat">${k} <b>${Math.round(v)}°</b></span>`).join("");
+    if (tab === "regler") zeichneArm();
   } catch (e) {}
 }
 
@@ -76,6 +79,7 @@ async function panik() {
 // ------------------------------- 1) Regler -------------------------------
 async function renderRegler() {
   const s = await API.get("/api/status");
+  WINKEL = s.winkel;
   const aktiv = s.aktiv || {};
   const regler = Object.entries(s.winkel).map(([n, w]) => {
     const an = aktiv[n] !== false;
@@ -91,13 +95,26 @@ async function renderRegler() {
     </div>`;
   }).join("");
   document.getElementById("inhalt").innerHTML = `
-    <div class="karte"><h2>Gelenke direkt steuern</h2>${regler}
-      <div class="reihe">
-        <button onclick="API.post('/api/home').then(refreshRegler)">🏠 Grundstellung</button>
-        <button onclick="API.post('/api/greifer',{aktion:'auf'})">✋ Greifer auf</button>
-        <button onclick="API.post('/api/greifer',{aktion:'zu'})">✊ Greifer zu</button>
+    <div class="raster">
+      <div class="karte modell-karte">
+        <h2>Live-Modell</h2>
+        <div id="armmodell" class="armmodell"></div>
       </div>
-      <div class="reihe">Tempo <input type="range" min="0" max="15" value="3" oninput="API.post('/api/tempo',{grad:Number(this.value)})"></div>
+      <div class="karte"><h2>Gelenke direkt steuern</h2>${regler}
+        <div class="reihe">
+          <button class="primary" onclick="API.post('/api/home').then(refreshRegler)">🏠 Grundstellung</button>
+          <button onclick="API.post('/api/greifer',{aktion:'auf'}).then(refreshRegler)">✋ Greifer auf</button>
+          <button onclick="API.post('/api/greifer',{aktion:'zu'}).then(refreshRegler)">✊ Greifer zu</button>
+        </div>
+        <div class="reihe">Tempo <input type="range" min="0" max="15" value="3" oninput="API.post('/api/tempo',{grad:Number(this.value)})"></div>
+      </div>
+    </div>
+    <div class="karte"><h2>Posen</h2>
+      <div class="reihe">
+        <input type="text" id="pose_name" placeholder="Posenname (z.B. winken_1)">
+        <button class="primary" onclick="poseSpeichern()">＋ aktuelle Pose speichern</button>
+      </div>
+      <div id="pose_liste" class="pose-liste" style="margin-top:12px">…</div>
     </div>
     <div class="karte"><h2>Koordinaten (für Fortgeschrittene)</h2>
       <div class="reihe">
@@ -106,8 +123,59 @@ async function renderRegler() {
         <span id="gehe_out" class="klein"></span>
       </div>
     </div>`;
+  zeichneArm();
+  poseListe();
 }
 async function refreshRegler() { if (tab === "regler") renderRegler(); }
+
+// ----- Live-Arm-Modell (SVG, reagiert auf die Gelenkwinkel) -----
+function zeichneArm() {
+  const box = document.getElementById("armmodell");
+  if (!box) return;
+  const W = WINKEL || {};
+  const schulter = W.schulter ?? 90, ellbogen = W.ellbogen ?? 90;
+  const basis = W.basis ?? 90, greifer = W.greifer ?? 35;
+  const S = 0.82, L1 = 61 * S, L2 = 80 * S, L3 = 80 * S;   // mm -> px (MK1)
+  const bx = 120, bodenY = 232, topY = bodenY - L1;
+  const rad = (d) => d * Math.PI / 180;
+  // Oberarm: schulter=90 -> senkrecht nach oben; Unterarm relativ zum Ellbogen
+  const aU = rad(schulter), aF = rad(schulter + (ellbogen - 90));
+  const p1 = [bx + L2 * Math.cos(aU), topY - L2 * Math.sin(aU)];
+  const p2 = [p1[0] + L3 * Math.cos(aF), p1[1] - L3 * Math.sin(aF)];
+  // Greifer-Öffnung
+  const auf = (greifer - 30) / (110 - 30);                  // 0..1 grob
+  const spread = 6 + Math.max(0, Math.min(1, auf)) * 12;
+  const gA = aF + Math.PI / 2, gl = 16;
+  const gx1 = [p2[0] + spread * Math.cos(gA), p2[1] - spread * Math.sin(gA)];
+  const gx2 = [p2[0] - spread * Math.cos(gA), p2[1] + spread * Math.sin(gA)];
+  const gt1 = [gx1[0] + gl * Math.cos(aF), gx1[1] - gl * Math.sin(aF)];
+  const gt2 = [gx2[0] + gl * Math.cos(aF), gx2[1] - gl * Math.sin(aF)];
+  // Basis-Drehung (Top-Down-Mini-Dial)
+  const dcx = 268, dcy = 52, dr = 26, ba = rad(basis - 90);
+  const dpx = dcx + dr * Math.cos(ba), dpy = dcy + dr * Math.sin(ba);
+  const f = (x) => x.toFixed(1);
+  const ln = (a, b, cls) => `<line x1="${f(a[0])}" y1="${f(a[1])}" x2="${f(b[0])}" y2="${f(b[1])}" class="${cls}"/>`;
+  const kreis = (c, r, cls) => `<circle cx="${f(c[0])}" cy="${f(c[1])}" r="${r}" class="${cls}"/>`;
+  box.innerHTML = `
+  <svg viewBox="0 0 320 250" class="arm-svg" xmlns="http://www.w3.org/2000/svg">
+    <line x1="20" y1="${bodenY}" x2="300" y2="${bodenY}" class="boden"/>
+    <rect x="${bx - 26}" y="${bodenY - 12}" width="52" height="12" rx="3" class="sockel"/>
+    <rect x="${bx - 11}" y="${f(topY)}" width="22" height="${f(L1)}" rx="6" class="saeule"/>
+    ${ln([bx, topY], p1, "segment")}
+    ${ln(p1, p2, "segment")}
+    ${ln(gx1, gt1, "greifer")}
+    ${ln(gx2, gt2, "greifer")}
+    ${kreis([bx, topY], 7, "gelenkpunkt")}
+    ${kreis(p1, 6, "gelenkpunkt")}
+    ${kreis(p2, 4, "gelenkpunkt")}
+    <g class="dial">
+      ${kreis([dcx, dcy], dr, "dial-bg")}
+      ${ln([dcx, dcy], [dpx, dpy], "dial-zeiger")}
+      ${kreis([dcx, dcy], 3, "gelenkpunkt")}
+      <text x="${dcx}" y="${dcy + dr + 13}" class="dial-text">Basis ${Math.round(basis)}°</text>
+    </g>
+  </svg>`;
+}
 async function servoSchalt(name, an) {
   await API.post("/api/servo", { name, an });
   const r = document.getElementById("r_" + name);
@@ -117,13 +185,46 @@ async function servoSchalt(name, an) {
 let rLast = 0;
 async function rSet(name, val) {
   document.getElementById("v_" + name).textContent = Math.round(val) + "°";
+  WINKEL[name] = Number(val);
+  zeichneArm();                                   // Modell läuft live mit
   const now = Date.now(); if (now - rLast < 70) return; rLast = now;
   await API.post("/api/gelenk", { name, winkel: Number(val) });
 }
 async function rGehe() {
   const r = await API.post("/api/gehe_zu", { x: Number(gx.value), y: Number(gy.value), z: Number(gz.value) });
   document.getElementById("gehe_out").textContent = JSON.stringify(r.winkel || r.fehler);
+  refreshRegler();
 }
+
+// ----- Posen (grafisch: aktuelle Stellung speichern, anfahren, löschen) -----
+async function poseListe() {
+  const el = document.getElementById("pose_liste");
+  if (!el) return;
+  const p = await API.get("/api/posen");
+  const posen = p.posen || {};
+  const namen = Object.keys(posen);
+  if (!namen.length) { el.innerHTML = '<p class="klein">Noch keine Pose. Stell den Arm ein und speichere ihn.</p>'; return; }
+  el.innerHTML = namen.map((nm) => {
+    const w = Object.entries(posen[nm]).map(([k, v]) => `${k[0]}${Math.round(v)}`).join(" ");
+    return `<div class="pose-zeile">
+      <span class="pose-name">${esc(nm)}</span>
+      <span class="pose-werte klein">${w}</span>
+      <span class="pose-aktion">
+        <button class="primary" onclick="poseAnfahren('${esc(nm)}')">anfahren</button>
+        <button onclick="poseLoeschen('${esc(nm)}')" title="löschen">✕</button>
+      </span></div>`;
+  }).join("");
+}
+async function poseSpeichern() {
+  const name = (document.getElementById("pose_name").value || "").trim();
+  if (!name) { flash("Bitte einen Posennamen eingeben."); return; }
+  await API.post("/api/pose/speichern", { name });
+  document.getElementById("pose_name").value = "";
+  flash("Pose gespeichert: " + name);
+  poseListe();
+}
+async function poseAnfahren(name) { await API.post("/api/pose/anfahren", { name }); refreshRegler(); }
+async function poseLoeschen(name) { await API.post("/api/pose/loeschen", { name }); poseListe(); }
 
 // ---------------------------- 2) Eigene Blöcke ----------------------------
 const BLOCKARTEN = {
