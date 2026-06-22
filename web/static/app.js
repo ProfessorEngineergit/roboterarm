@@ -73,9 +73,20 @@ async function panik() {
 // ------------------------------- 1) Regler -------------------------------
 async function renderRegler() {
   const s = await API.get("/api/status");
-  const regler = Object.entries(s.winkel).map(([n, w]) => `
-    <div class="gelenk"><label>${n} <b id="v_${n}">${Math.round(w)}°</b></label>
-      <input type="range" min="0" max="180" value="${w}" oninput="rSet('${n}', this.value)"></div>`).join("");
+  const aktiv = s.aktiv || {};
+  const regler = Object.entries(s.winkel).map(([n, w]) => {
+    const an = aktiv[n] !== false;
+    return `
+    <div class="gelenk">
+      <label><span class="gname">${n}</span>
+        <span class="gright"><b id="v_${n}">${Math.round(w)}°</b>
+          <label class="schalter" title="Servo an/aus">
+            <input type="checkbox" ${an ? "checked" : ""} onchange="servoSchalt('${n}', this.checked)">
+            <span class="schieber"></span></label>
+        </span></label>
+      <input type="range" id="r_${n}" min="0" max="180" value="${w}" oninput="rSet('${n}', this.value)" ${an ? "" : "disabled"}>
+    </div>`;
+  }).join("");
   document.getElementById("inhalt").innerHTML = `
     <div class="karte"><h2>Gelenke direkt steuern</h2>${regler}
       <div class="reihe">
@@ -94,6 +105,12 @@ async function renderRegler() {
     </div>`;
 }
 async function refreshRegler() { if (tab === "regler") renderRegler(); }
+async function servoSchalt(name, an) {
+  await API.post("/api/servo", { name, an });
+  const r = document.getElementById("r_" + name);
+  if (r) r.disabled = !an;
+  flash(an ? `${name}: Servo an` : `${name}: Servo aus (locker)`);
+}
 let rLast = 0;
 async function rSet(name, val) {
   document.getElementById("v_" + name).textContent = Math.round(val) + "°";

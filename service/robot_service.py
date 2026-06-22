@@ -72,6 +72,7 @@ def frame_bild(frame):
 def status() -> dict:
     return {"backend": type(arm._ctrl.backend).__name__,
             "winkel": arm.alle_winkel(),
+            "aktiv": dict(arm._ctrl.aktiv),
             "projekt": arm.cfg.projekt}
 
 
@@ -314,6 +315,12 @@ class Handler(BaseHTTPRequestHandler):
         if p == "/api/greifer":
             with sperre:
                 (arm.greifer.auf if d.get("aktion") == "auf" else arm.greifer.zu)()
+            return self._json(status())
+        if p == "/api/servo":
+            if d.get("name") not in arm.cfg.gelenke:
+                return self._json({"fehler": "unbekanntes Gelenk"}, 400)
+            with sperre:
+                arm.servo(d["name"], bool(d.get("an", True)))
             return self._json(status())
         if p == "/api/home":
             with sperre:

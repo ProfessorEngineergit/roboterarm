@@ -26,6 +26,10 @@ class ServoBackend:
     def setze_puls(self, kanal: int, mikrosekunden: float) -> None:
         raise NotImplementedError
 
+    def abschalten(self, kanal: int) -> None:
+        """Kanal stromlos schalten (kein PWM) -> Servo wird kraftlos/locker."""
+        pass
+
     def schliessen(self) -> None:
         pass
 
@@ -41,6 +45,11 @@ class SimBackend(ServoBackend):
         self.pulse[kanal] = mikrosekunden
         if self.verbose:
             print(f"[SIM] Kanal {kanal}: {mikrosekunden:.0f} µs")
+
+    def abschalten(self, kanal: int) -> None:
+        self.pulse[kanal] = 0.0
+        if self.verbose:
+            print(f"[SIM] Kanal {kanal}: aus")
 
 
 class PCA9685Backend(ServoBackend):
@@ -80,6 +89,14 @@ class PCA9685Backend(ServoBackend):
         self._schreibe(basis + 2, off & 0xFF)   # OFF_L
         self._schreibe(basis + 3, off >> 8)     # OFF_H
 
+    def abschalten(self, kanal: int) -> None:
+        # "Full OFF": Bit 4 im OFF_H-Register -> kein PWM mehr, Servo wird kraftlos.
+        basis = self.LED0_ON_L + 4 * kanal
+        self._schreibe(basis + 0, 0)            # ON_L
+        self._schreibe(basis + 1, 0)            # ON_H
+        self._schreibe(basis + 2, 0)            # OFF_L
+        self._schreibe(basis + 3, 0x10)         # OFF_H, Full-OFF-Bit
+
     def schliessen(self) -> None:
         try:
             self.bus.close()
@@ -101,6 +118,7 @@ class ServoController:
         self.cfg = cfg
         self.backend = backend or erzeuge_backend(cfg)
         self.gestoppt = threading.Event()        # NOT-AUS: unterbindet Bewegung
+        self.aktiv: dict[str, bool] = {n: True for n in cfg.gelenke}   # Servo an/aus je Gelenk
         self.winkel: dict[str, float] = {n: g.home for n, g in cfg.gelenke.items()}
         for name, w in self.winkel.items():     # Anfangsstellung anfahren
             self._anwenden(name, w)
@@ -121,8 +139,17 @@ class ServoController:
         g = self.cfg.gelenke[name]
         return max(g.min_winkel, min(g.max_winkel, winkel))
 
+    def schalte(self, name: str, an: bool) -> None:
+        """Servo eines Gelenks an- (hält Position) oder ausschalten (wird kraftlos)."""
+        self.aktiv[name] = bool(an)
+        g = self.cfg.gelenke[name]
+        if an:
+            self._anwenden(name, self.winkel[name])   # wieder bestromen, aktuelle Position halten
+        else:
+            self.backend.abschalten(g.kanal)
+
     def setze(self, name: str, ziel: float, sanft: bool = True, speed: float | None = None) -> float:
-        if self.gestoppt.is_set():               # NOT-AUS aktiv -> gar nicht erst losfahren
+        if self.gestoppt.is_set() or not self.aktiv.get(name, True):   # NOT-AUS oder Servo aus
             return self.winkel[name]
         ziel = self.grenzen(name, ziel)
         start = self.winkel[name]

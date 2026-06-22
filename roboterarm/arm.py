@@ -81,6 +81,10 @@ class Arm:
         """Sperre nach NOT-AUS aufheben — neue Bewegungen wieder erlaubt."""
         self._ctrl.gestoppt.clear()
 
+    def servo(self, name: str, an: bool):
+        """Servo eines Gelenks an-/ausschalten (aus = kraftlos, von Hand verstellbar)."""
+        self._ctrl.schalte(name, an)
+
     # ------------------------ Kamera / ML / Projekt ------------------------
     @property
     def kamera(self):
