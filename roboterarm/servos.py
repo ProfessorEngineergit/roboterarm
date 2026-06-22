@@ -10,6 +10,7 @@ erzwingt Winkelgrenzen und fährt Ziele *sanft* (interpoliert) an.
 from __future__ import annotations
 
 import os
+import threading
 import time
 
 
@@ -99,6 +100,7 @@ class ServoController:
     def __init__(self, cfg, backend: ServoBackend | None = None):
         self.cfg = cfg
         self.backend = backend or erzeuge_backend(cfg)
+        self.gestoppt = threading.Event()        # NOT-AUS: unterbindet Bewegung
         self.winkel: dict[str, float] = {n: g.home for n, g in cfg.gelenke.items()}
         for name, w in self.winkel.items():     # Anfangsstellung anfahren
             self._anwenden(name, w)
@@ -120,6 +122,8 @@ class ServoController:
         return max(g.min_winkel, min(g.max_winkel, winkel))
 
     def setze(self, name: str, ziel: float, sanft: bool = True, speed: float | None = None) -> float:
+        if self.gestoppt.is_set():               # NOT-AUS aktiv -> gar nicht erst losfahren
+            return self.winkel[name]
         ziel = self.grenzen(name, ziel)
         start = self.winkel[name]
         schrittweite = speed if (speed and speed > 0) else self.cfg.speed_grad_pro_schritt
@@ -129,6 +133,8 @@ class ServoController:
             return ziel
         n = max(1, int(abs(ziel - start) / schrittweite))
         for i in range(1, n + 1):
+            if self.gestoppt.is_set():           # NOT-AUS während der Fahrt -> sofort anhalten
+                return self.winkel[name]
             w = start + (ziel - start) * i / n
             self.winkel[name] = w
             self._anwenden(name, w)

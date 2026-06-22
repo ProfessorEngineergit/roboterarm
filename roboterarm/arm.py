@@ -72,6 +72,15 @@ class Arm:
         for name, g in self.cfg.gelenke.items():
             self._move(name, g.home)
 
+    # ----------------------------- NOT-AUS -----------------------------
+    def not_aus(self):
+        """Sofort-Stopp: laufende und neue Bewegungen werden unterbunden."""
+        self._ctrl.gestoppt.set()
+
+    def weiter(self):
+        """Sperre nach NOT-AUS aufheben — neue Bewegungen wieder erlaubt."""
+        self._ctrl.gestoppt.clear()
+
     # ------------------------ Kamera / ML / Projekt ------------------------
     @property
     def kamera(self):

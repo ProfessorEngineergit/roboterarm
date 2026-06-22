@@ -1,48 +1,24 @@
-/* roboterarm — Weboberfläche (vanilla JS, offline, ohne Abhängigkeiten) */
+/* roboterarm — Weboberfläche (vanilla JS, offline, ohne Abhängigkeiten)
+ *
+ * Vier Stufen, von einfach nach frei:
+ *   Regler · Eigene Blöcke · Scratch · Python
+ * Ein großer NOT-AUS ist immer sichtbar und stoppt sofort alles.
+ */
 
 const API = {
   async get(p) { const r = await fetch(p); return r.json(); },
   async post(p, b) { const r = await fetch(p, { method: "POST", body: JSON.stringify(b || {}) }); return r.json(); },
 };
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const schlafe = (ms) => new Promise((r) => setTimeout(r, ms));
 
-let FARBEN = [];
-let tab = "manuell";
+let tab = "regler";
 let pollers = [];
-let kiKlassen = [];
-let simObjekte = [{ welt: 120, farbe: "orange", radius: 18 }];
+let ABBRUCH = false;            // bricht laufende Block-/Warte-Sequenzen ab
+let PROGRAMM = [];              // Block-Programm (Tab „Eigene Blöcke")
 
 function stopPoll() { pollers.forEach(clearInterval); pollers = []; }
 function poll(fn, ms) { fn(); pollers.push(setInterval(fn, ms)); }
-
-// ------------------------------- Beispiele -------------------------------
-const BEISPIELE = {
-  "— Beispiel wählen —": "",
-  "Winken": `from roboterarm import Arm
-from roboterarm.verhalten import winken
-arm = Arm(); arm.home()
-winken(arm)
-print("gewunken!")`,
-  "Objekt finden & aufheben": `from roboterarm import Arm
-arm = Arm(); arm.home()
-ziel = "orange"
-if arm.suche(ziel):
-    arm.zentriere_auf(ziel)
-    arm.aufheben(); arm.ablegen()
-    print("aufgehoben:", ziel)
-else:
-    print("nichts gefunden")`,
-  "Nach Farbe sortieren": `from roboterarm import Arm
-arm = Arm(); arm.home()
-arm.sortiere({"rot": 40, "blau": 140})
-print("sortiert")`,
-  "KI: erkennen": `from roboterarm import Arm
-arm = Arm()
-print(arm.erkenne())`,
-  "Koordinaten (IK)": `from roboterarm import Arm
-arm = Arm(); arm.home()
-print(arm.gehe_zu(120, 0, 60))`,
-};
 
 // --------------------------------- Start ---------------------------------
 window.addEventListener("DOMContentLoaded", init);
@@ -52,38 +28,29 @@ async function init() {
     <header>
       <h1>🤖 roboterarm</h1>
       <span class="backend" id="backend">…</span>
+      <button class="notaus" id="notaus" onclick="panik()" title="Sofort alles stoppen">■ NOT-AUS</button>
       <nav id="nav"></nav>
     </header>
-    <main>
-      <div>
-        <div class="karte">
-          <h2>Kamera</h2>
-          <img class="cam" id="cam" alt="Kamerabild">
-          <div id="simbox"></div>
-        </div>
-        <div class="karte"><h2>Status</h2><div id="status" class="klein">…</div></div>
-      </div>
-      <div id="inhalt"></div>
-    </main>`;
+    <div class="statusbar" id="statusbar">…</div>
+    <main><div id="inhalt"></div></main>
+    <div id="toast" class="toast"></div>`;
 
-  const navs = ["manuell", "vision", "ki", "code", "aufnahme"];
-  const titel = { manuell: "Manuell", vision: "Vision", ki: "KI-Studio", code: "Code", aufnahme: "Aufnahme & Posen" };
+  const navs = ["regler", "bloecke", "scratch", "python"];
+  const titel = { regler: "🎚 Regler", bloecke: "🧩 Eigene Blöcke", scratch: "🐱 Scratch", python: "🐍 Python" };
   document.getElementById("nav").innerHTML = navs.map(
     (n) => `<button id="nav_${n}" onclick="zeigeTab('${n}')">${titel[n]}</button>`).join("");
 
-  try { FARBEN = (await API.get("/api/vision/farben")).farben || []; } catch (e) { FARBEN = []; }
-  renderSim();
-  setInterval(() => { document.getElementById("cam").src = "/api/kamera.img?t=" + Date.now(); }, 160);
   setInterval(refreshStatus, 1000);
-  zeigeTab("manuell");
+  refreshStatus();
+  zeigeTab("regler");
 }
 
 async function refreshStatus() {
   try {
     const s = await API.get("/api/status");
     document.getElementById("backend").textContent = s.backend + " · " + s.projekt;
-    document.getElementById("status").innerHTML = Object.entries(s.winkel)
-      .map(([k, v]) => `${k}: <b>${Math.round(v)}°</b>`).join(" · ");
+    document.getElementById("statusbar").innerHTML = Object.entries(s.winkel)
+      .map(([k, v]) => `<span class="stat">${k} <b>${Math.round(v)}°</b></span>`).join("");
   } catch (e) {}
 }
 
@@ -91,146 +58,208 @@ function zeigeTab(name) {
   tab = name; stopPoll();
   document.querySelectorAll("#nav button").forEach((b) => b.classList.remove("aktiv"));
   document.getElementById("nav_" + name).classList.add("aktiv");
-  ({ manuell: renderManuell, vision: renderVision, ki: renderKI, code: renderCode, aufnahme: renderAufnahme }[name])();
+  ({ regler: renderRegler, bloecke: renderBloecke, scratch: renderScratch, python: renderPython }[name])();
 }
 
-// ------------------------------ Simulation ------------------------------
-function renderSim() {
-  const opt = FARBEN.map((f) => `<option>${f}</option>`).join("");
-  document.getElementById("simbox").innerHTML = `
-    <div class="reihe klein" style="margin-top:8px">Sim-Objekt:
-      <select id="sim_farbe">${opt}</select>
-      <input type="number" id="sim_welt" value="120" title="Azimut in Grad" style="width:64px">
-      <button onclick="simAdd()">+ legen</button>
-      <button onclick="simClear()">leeren</button>
-    </div>`;
+// ------------------------------- NOT-AUS -------------------------------
+async function panik() {
+  ABBRUCH = true;
+  try { await API.post("/api/panik"); } catch (e) {}
+  const b = document.getElementById("notaus");
+  if (b) { b.classList.add("blink"); setTimeout(() => b.classList.remove("blink"), 1500); }
+  flash("⏹ NOT-AUS — alles gestoppt. Bewege etwas, um weiterzumachen.");
 }
-async function simAdd() {
-  simObjekte.push({ welt: Number(document.getElementById("sim_welt").value), farbe: document.getElementById("sim_farbe").value, radius: 18 });
-  await API.post("/api/sim_objekte", { objekte: simObjekte });
-}
-async function simClear() { simObjekte = []; await API.post("/api/sim_objekte", { objekte: [] }); }
 
-// ------------------------------- Manuell -------------------------------
-async function renderManuell() {
+// ------------------------------- 1) Regler -------------------------------
+async function renderRegler() {
   const s = await API.get("/api/status");
   const regler = Object.entries(s.winkel).map(([n, w]) => `
     <div class="gelenk"><label>${n} <b id="v_${n}">${Math.round(w)}°</b></label>
-      <input type="range" min="0" max="180" value="${w}" oninput="mSet('${n}', this.value)"></div>`).join("");
+      <input type="range" min="0" max="180" value="${w}" oninput="rSet('${n}', this.value)"></div>`).join("");
   document.getElementById("inhalt").innerHTML = `
-    <div class="karte"><h2>Gelenke</h2>${regler}
+    <div class="karte"><h2>Gelenke direkt steuern</h2>${regler}
       <div class="reihe">
-        <button onclick="API.post('/api/home').then(refreshManuell)">🏠 Home</button>
+        <button onclick="API.post('/api/home').then(refreshRegler)">🏠 Grundstellung</button>
         <button onclick="API.post('/api/greifer',{aktion:'auf'})">✋ Greifer auf</button>
         <button onclick="API.post('/api/greifer',{aktion:'zu'})">✊ Greifer zu</button>
       </div>
       <div class="reihe">Tempo <input type="range" min="0" max="15" value="3" oninput="API.post('/api/tempo',{grad:Number(this.value)})"></div>
     </div>
-    <div class="karte"><h2>Koordinaten (inverse Kinematik)</h2>
+    <div class="karte"><h2>Koordinaten (für Fortgeschrittene)</h2>
       <div class="reihe">
         x <input type="number" id="gx" value="120"> y <input type="number" id="gy" value="0"> z <input type="number" id="gz" value="60">
-        <button class="primary" onclick="mGehe()">gehe_zu</button>
+        <button class="primary" onclick="rGehe()">gehe zu</button>
         <span id="gehe_out" class="klein"></span>
       </div>
     </div>`;
 }
-async function refreshManuell() { if (tab === "manuell") renderManuell(); }
-let mLast = 0;
-async function mSet(name, val) {
+async function refreshRegler() { if (tab === "regler") renderRegler(); }
+let rLast = 0;
+async function rSet(name, val) {
   document.getElementById("v_" + name).textContent = Math.round(val) + "°";
-  const now = Date.now(); if (now - mLast < 70) return; mLast = now;
+  const now = Date.now(); if (now - rLast < 70) return; rLast = now;
   await API.post("/api/gelenk", { name, winkel: Number(val) });
 }
-async function mGehe() {
-  const r = await API.post("/api/gehe_zu", {
-    x: Number(gx.value), y: Number(gy.value), z: Number(gz.value) });
-  document.getElementById("gehe_out").textContent = JSON.stringify(r.winkel);
+async function rGehe() {
+  const r = await API.post("/api/gehe_zu", { x: Number(gx.value), y: Number(gy.value), z: Number(gz.value) });
+  document.getElementById("gehe_out").textContent = JSON.stringify(r.winkel || r.fehler);
 }
 
-// -------------------------------- Vision --------------------------------
-function renderVision() {
-  const opt = FARBEN.map((f) => `<option>${f}</option>`).join("");
-  document.getElementById("inhalt").innerHTML = `
-    <div class="karte"><h2>Farb-/Objekterkennung</h2>
-      <div class="reihe">Ziel: <select id="v_ziel" onchange="">${opt}</select></div>
-      <div class="pred" id="v_pred">—</div>
-      <div class="posbar"><i id="v_bar" style="left:50%"></i></div>
-      <div class="klein" id="v_info" style="margin-top:8px"></div>
-    </div>
-    <div class="karte"><h2>Alle Treffer</h2><div id="v_alle" class="klein">…</div></div>`;
-  poll(visionTick, 300);
-}
-async function visionTick() {
-  const ziel = document.getElementById("v_ziel").value;
-  const r = await API.get("/api/vision/finde?ziel=" + encodeURIComponent(ziel));
-  const t = r.treffer;
-  document.getElementById("v_pred").textContent = t ? `${ziel} sichtbar` : `${ziel}: —`;
-  document.getElementById("v_pred").style.color = t ? "var(--gut)" : "var(--muted)";
-  document.getElementById("v_bar").style.left = (t ? (t.x + 1) * 50 : 50) + "%";
-  document.getElementById("v_info").textContent = t
-    ? `x=${t.x.toFixed(2)}  y=${t.y.toFixed(2)}  Größe=${(t.groesse * 100).toFixed(1)}%` : "nicht im Bild";
-  const a = await API.get("/api/vision/alle?ziel=" + encodeURIComponent(ziel));
-  document.getElementById("v_alle").textContent = (a.treffer || []).length
-    ? (a.treffer.map((o, i) => `#${i + 1} x=${o.x.toFixed(2)} größe=${(o.groesse * 100).toFixed(1)}%`).join("\n")) : "keine";
-}
+// ---------------------------- 2) Eigene Blöcke ----------------------------
+const BLOCKARTEN = {
+  home:        { text: "🏠 Grundstellung",       farbe: "b-move" },
+  basis:       { text: "Basis auf [w]°",         farbe: "b-move", min: 0, max: 180, std: 90 },
+  schulter:    { text: "Schulter auf [w]°",      farbe: "b-move", min: 0, max: 180, std: 90 },
+  ellbogen:    { text: "Ellbogen auf [w]°",      farbe: "b-move", min: 0, max: 180, std: 90 },
+  greifer_auf: { text: "✋ Greifer auf",          farbe: "b-grip" },
+  greifer_zu:  { text: "✊ Greifer zu",           farbe: "b-grip" },
+  warte:       { text: "⏱ warte [w] s",          farbe: "b-wait", min: 0, max: 30, std: 1 },
+};
+const hatParam = (d) => d.text.includes("[w]");
 
-// ------------------------------- KI-Studio -------------------------------
-async function renderKI() {
-  const st = await API.get("/api/ki/status");
-  const set = new Set([...(st.klassen || []), ...kiKlassen]);
-  kiKlassen = [...set];
-  const verteilung = st.verteilung || {};
-  const zeilen = kiKlassen.map((k) => `
-    <div class="klassenzeile"><span class="name">${esc(k)}</span>
-      <span class="badge">${verteilung[k] || 0} Bilder</span>
-      <button onclick="kiCapture('${esc(k)}',5)">📸 ×5</button></div>`).join("");
-  const chips = ["Ball", "Tasse", "Hand", "Würfel", "leer"].map(
-    (c) => `<span class="chip" onclick="kiQuickAdd('${c}')">+ ${c}</span>`).join("");
+function renderBloecke() {
+  ladeProgramm();
+  const palette = Object.entries(BLOCKARTEN).map(([typ, d]) =>
+    `<button class="palettenblock ${d.farbe}" onclick="blockAdd('${typ}')">${d.text.replace("[w]", "…")}</button>`).join("");
   document.getElementById("inhalt").innerHTML = `
-    <div class="karte"><h2>Klassen</h2>
-      <div class="klassenliste" id="ki_liste">${zeilen || '<span class="klein">noch keine Klasse</span>'}</div>
-      <div class="reihe"><input type="text" id="ki_neu" placeholder="neue Klasse"><button onclick="kiAdd()">+ hinzufügen</button></div>
-      <div class="chips" style="margin-top:8px">${chips}</div>
-      <div class="reihe">
-        <button class="primary" onclick="kiTrain()">🧠 Trainieren</button>
-        <button onclick="kiBewerte()">📊 Bewerten</button>
-        <button onclick="API.post('/api/ki/speichern',{}).then(()=>flash('gespeichert'))">💾 Speichern</button>
-        <button onclick="API.post('/api/ki/laden',{}).then(renderKI)">📂 Laden</button>
-        <button class="gefahr" onclick="API.post('/api/ki/reset',{}).then(()=>{kiKlassen=[];renderKI();})">Reset</button>
+    <div class="bloecke-layout">
+      <div class="karte palette"><h2>Bausteine</h2>${palette}
+        <p class="klein" style="margin-top:10px">Klick einen Baustein → er kommt rechts ins Programm.</p>
       </div>
-      <div class="klein" id="ki_msg"></div>
-    </div>
-    <div class="karte"><h2>Live-Erkennung</h2><div class="pred" id="ki_pred">—</div><div class="klein" id="ki_proba"></div></div>
-    <div class="karte" id="ki_bewertung" style="display:none"><h2>Bewertung (Confusion-Matrix)</h2><div id="ki_conf"></div></div>`;
-  poll(kiTick, 700);
-}
-function kiAdd() { const v = document.getElementById("ki_neu").value.trim(); if (v && !kiKlassen.includes(v)) { kiKlassen.push(v); renderKI(); } }
-function kiQuickAdd(v) { if (!kiKlassen.includes(v)) kiKlassen.push(v); renderKI(); }
-async function kiCapture(label, n) {
-  for (let i = 0; i < n; i++) await API.post("/api/ki/aufnehmen", { label });
-  flash(`${n} Bilder für „${label}"`); renderKI();
-}
-async function kiTrain() { const r = await API.post("/api/ki/trainiere"); flash("trainiert: " + JSON.stringify(r.klassen || r.fehler)); }
-async function kiTick() {
-  const d = await API.get("/api/ki/erkenne");
-  document.getElementById("ki_pred").textContent = d.label ? `${d.label} (${d.confidence})` : "—";
-  document.getElementById("ki_proba").textContent = Object.entries(d.proba || {}).map(([k, v]) => `${k}:${v}`).join("  ");
-}
-async function kiBewerte() {
-  const b = await API.get("/api/ki/bewerte");
-  const box = document.getElementById("ki_bewertung");
-  if (b.fehler) { box.style.display = "block"; document.getElementById("ki_conf").textContent = b.fehler; return; }
-  const ks = b.klassen;
-  const kopf = `<tr><th>echt ＼ erkannt</th>${ks.map((k) => `<th>${esc(k)}</th>`).join("")}</tr>`;
-  const zeilen = ks.map((a) => `<tr><th>${esc(a)}</th>${ks.map((p) =>
-    `<td class="${a === p ? "diag" : ""}">${b.confusion[a][p]}</td>`).join("")}</tr>`).join("");
-  box.style.display = "block";
-  document.getElementById("ki_conf").innerHTML =
-    `<p class="klein">Genauigkeit: <b>${(b.genauigkeit * 100).toFixed(0)}%</b> (${b.n_test} Testbilder)</p><table>${kopf}${zeilen}</table>`;
+      <div class="karte programm-spalte"><h2>Mein Programm</h2>
+        <div id="programm" class="programm"></div>
+        <div class="reihe" style="margin-top:12px">
+          Wiederhole alles <input type="number" id="runden" value="1" min="1" max="99" style="width:56px">×
+        </div>
+        <div class="reihe">
+          <button class="primary gross" onclick="bloeckeRun()">▶ Start</button>
+          <button onclick="panik()">■ Stop</button>
+          <button onclick="programmLeeren()">🗑 leeren</button>
+        </div>
+        <div class="klein" id="block_msg" style="margin-top:8px"></div>
+      </div>
+    </div>`;
+  zeichneProgramm();
 }
 
-// --------------------------------- Code ---------------------------------
-function renderCode() {
+function blockText(d, b, i) {
+  if (!hatParam(d)) return d.text;
+  const inp = `<input type="number" class="binp" value="${b.wert}" min="${d.min}" max="${d.max}" onchange="blockSet(${i}, this.value)">`;
+  return d.text.replace("[w]", inp);
+}
+function zeichneProgramm() {
+  const el = document.getElementById("programm");
+  if (!PROGRAMM.length) { el.innerHTML = '<p class="klein">Noch leer — wähle links Bausteine.</p>'; speichereProgramm(); return; }
+  el.innerHTML = PROGRAMM.map((b, i) => {
+    const d = BLOCKARTEN[b.typ];
+    return `<div class="block ${d.farbe}" id="blk_${i}">
+        <span class="bnr">${i + 1}</span>
+        <span class="btext">${blockText(d, b, i)}</span>
+        <span class="bctrl">
+          <button onclick="blockMove(${i},-1)" title="hoch">▲</button>
+          <button onclick="blockMove(${i},1)" title="runter">▼</button>
+          <button onclick="blockDel(${i})" title="entfernen">✕</button>
+        </span></div>`;
+  }).join("");
+  speichereProgramm();
+}
+function blockAdd(typ) {
+  const d = BLOCKARTEN[typ];
+  PROGRAMM.push({ typ, wert: hatParam(d) ? d.std : null });
+  zeichneProgramm();
+}
+function blockSet(i, val) { PROGRAMM[i].wert = Number(val); speichereProgramm(); }
+function blockDel(i) { PROGRAMM.splice(i, 1); zeichneProgramm(); }
+function blockMove(i, dir) {
+  const j = i + dir; if (j < 0 || j >= PROGRAMM.length) return;
+  [PROGRAMM[i], PROGRAMM[j]] = [PROGRAMM[j], PROGRAMM[i]]; zeichneProgramm();
+}
+function programmLeeren() { PROGRAMM = []; zeichneProgramm(); }
+function speichereProgramm() { try { localStorage.setItem("roboterarm_programm", JSON.stringify(PROGRAMM)); } catch (e) {} }
+function ladeProgramm() {
+  if (PROGRAMM.length) return;
+  try { PROGRAMM = JSON.parse(localStorage.getItem("roboterarm_programm") || "[]"); } catch (e) { PROGRAMM = []; }
+}
+
+async function bloeckeRun() {
+  if (!PROGRAMM.length) { msgBlock("Programm ist leer."); return; }
+  ABBRUCH = false;
+  const runden = Math.max(1, Number(document.getElementById("runden").value) || 1);
+  msgBlock(`läuft … (${runden}×)`);
+  for (let r = 0; r < runden && !ABBRUCH; r++) {
+    for (let i = 0; i < PROGRAMM.length && !ABBRUCH; i++) {
+      hebeHervor(i);
+      await fuehreBlock(PROGRAMM[i]);
+    }
+  }
+  hebeHervor(-1);
+  msgBlock(ABBRUCH ? "gestoppt." : "fertig ✓");
+}
+async function fuehreBlock(b) {
+  switch (b.typ) {
+    case "home": await API.post("/api/home"); break;
+    case "basis": case "schulter": case "ellbogen":
+      await API.post("/api/gelenk", { name: b.typ, winkel: Number(b.wert) }); break;
+    case "greifer_auf": await API.post("/api/greifer", { aktion: "auf" }); break;
+    case "greifer_zu": await API.post("/api/greifer", { aktion: "zu" }); break;
+    case "warte": await warteAbbrechbar(Number(b.wert) * 1000); break;
+  }
+}
+async function warteAbbrechbar(ms) {
+  const ende = Date.now() + ms;
+  while (Date.now() < ende && !ABBRUCH) await schlafe(Math.min(100, Math.max(0, ende - Date.now())));
+}
+function hebeHervor(i) {
+  document.querySelectorAll(".block").forEach((e) => e.classList.remove("aktivblock"));
+  const el = document.getElementById("blk_" + i); if (el) el.classList.add("aktivblock");
+}
+function msgBlock(t) { const m = document.getElementById("block_msg"); if (m) m.textContent = t; }
+
+// ------------------------------- 3) Scratch -------------------------------
+async function renderScratch() {
+  let vorhanden = false;
+  try { vorhanden = (await API.get("/api/scratch/status")).vorhanden; } catch (e) {}
+  const host = location.hostname || "localhost";
+  if (vorhanden) {
+    const ext = encodeURIComponent(`http://${host}:8765/roboterarm_extension.js`);
+    document.getElementById("inhalt").innerHTML = `
+      <div class="karte scratch-karte"><h2>Scratch — Blöcke ziehen</h2>
+        <iframe class="scratch-frame" src="/turbowarp/index.html?extension=${ext}" allow="fullscreen" title="Scratch"></iframe>
+        <p class="klein">Die „Roboterarm"-Blöcke findest du links unten bei den Erweiterungen.</p>
+      </div>`;
+  } else {
+    document.getElementById("inhalt").innerHTML = `
+      <div class="karte"><h2>Scratch ist noch nicht installiert</h2>
+        <p>Die lokale Scratch-Oberfläche (TurboWarp) muss <b>einmalig mit Internet</b> aufs Board geladen werden:</p>
+        <pre class="konsole">cd ~/roboterarm
+./deploy/turbowarp_holen.sh</pre>
+        <p class="klein">Danach läuft dieser Tab komplett offline. Bis dahin kannst du den Tab
+           „Eigene Blöcke" nutzen — der kann fast dasselbe.</p>
+      </div>`;
+  }
+}
+
+// ------------------------------- 4) Python -------------------------------
+const BEISPIELE = {
+  "— Beispiel wählen —": "",
+  "Winken": `from roboterarm import Arm
+arm = Arm(); arm.home()
+for _ in range(3):
+    arm.basis(60); arm.basis(120)
+arm.home()
+print("gewunken!")`,
+  "Greifer-Test": `from roboterarm import Arm
+arm = Arm(); arm.home()
+arm.greifer.auf()
+arm.greifer.zu()
+print("Greifer ok")`,
+  "Quadrat (Koordinaten)": `from roboterarm import Arm
+arm = Arm(); arm.home()
+for (x, y) in [(120,-40),(120,40),(160,40),(160,-40)]:
+    print(arm.gehe_zu(x, y, 60))
+arm.home()`,
+};
+function renderPython() {
   const opt = Object.keys(BEISPIELE).map((k) => `<option>${k}</option>`).join("");
   document.getElementById("inhalt").innerHTML = `
     <div class="karte"><h2>Python-Editor</h2>
@@ -243,7 +272,7 @@ arm = Arm()
 arm.home()
 print("bereit:", arm.alle_winkel())</textarea>
       <div class="reihe"><button class="primary" onclick="codeRun()">▶ Ausführen</button>
-        <button class="gefahr" onclick="codeStop()">■ Stop</button></div>
+        <button class="gefahr" onclick="panik()">■ Stop</button></div>
     </div>
     <div class="karte"><h2>Ausgabe</h2><pre class="konsole" id="konsole">—</pre></div>`;
 }
@@ -254,45 +283,20 @@ async function codeSave() {
   flash("gespeichert: " + name);
 }
 async function codeRun() {
+  ABBRUCH = false;
   await API.post("/api/code/run", { code: document.getElementById("code").value });
   stopPoll(); poll(codeTick, 400);
 }
-async function codeStop() { await API.post("/api/code/stop"); }
 async function codeTick() {
   const r = await API.get("/api/code/ausgabe?seit=0");
   document.getElementById("konsole").textContent = (r.zeilen || []).join("\n") || "…";
-  if (!r.laeuft) { stopPoll(); }
+  if (!r.laeuft) stopPoll();
 }
-
-// ----------------------------- Aufnahme/Posen -----------------------------
-async function renderAufnahme() {
-  const p = await API.get("/api/posen");
-  const posen = Object.entries(p.posen || {}).map(([n, w]) =>
-    `<div class="klassenzeile"><span class="name">${esc(n)}</span>
-       <span class="badge">${Object.entries(w).map(([k, v]) => k[0] + Math.round(v)).join(" ")}</span>
-       <button onclick="poseGo('${esc(n)}')">anfahren</button></div>`).join("");
-  document.getElementById("inhalt").innerHTML = `
-    <div class="karte"><h2>Bewegung aufnehmen</h2>
-      <div class="reihe">
-        <button onclick="API.post('/api/aufnahme/start').then(()=>flash('Aufnahme läuft – jetzt bewegen'))">⏺ Start</button>
-        <button onclick="API.post('/api/aufnahme/stop').then(r=>flash(r.schritte.length+' Schritte'))">⏹ Stop</button>
-        <button class="primary" onclick="API.post('/api/aufnahme/wiedergabe')">▶ Wiedergabe</button>
-      </div>
-      <p class="klein">Start → im Tab „Manuell" bewegen → Stop → Wiedergabe spielt es ab.</p>
-    </div>
-    <div class="karte"><h2>Posen</h2>
-      <div class="reihe"><input type="text" id="pose_name" placeholder="Posenname"><button onclick="poseSave()">Pose speichern</button></div>
-      <div class="klassenliste" style="margin-top:10px">${posen || '<span class="klein">keine Posen</span>'}</div>
-    </div>`;
-}
-async function poseSave() {
-  const name = document.getElementById("pose_name").value.trim(); if (!name) return;
-  await API.post("/api/pose/speichern", { name }); renderAufnahme();
-}
-async function poseGo(name) { await API.post("/api/pose/anfahren", { name }); }
 
 // -------------------------------- Helfer --------------------------------
 function flash(text) {
-  const m = document.getElementById("ki_msg") || document.getElementById("status");
-  if (m) { m.textContent = text; setTimeout(() => { if (m.id === "ki_msg") m.textContent = ""; }, 2500); }
+  const t = document.getElementById("toast");
+  if (!t) return;
+  t.textContent = text; t.classList.add("an");
+  clearTimeout(flash._t); flash._t = setTimeout(() => t.classList.remove("an"), 2800);
 }

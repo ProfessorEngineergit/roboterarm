@@ -75,6 +75,21 @@ def status() -> dict:
             "projekt": arm.cfg.projekt}
 
 
+# Mime-Typen für die lokal ausgelieferte TurboWarp-Oberfläche (web/turbowarp/).
+_MIME = {".html": "text/html; charset=utf-8", ".js": "text/javascript", ".mjs": "text/javascript",
+         ".css": "text/css", ".json": "application/json", ".map": "application/json",
+         ".svg": "image/svg+xml", ".png": "image/png", ".jpg": "image/jpeg", ".gif": "image/gif",
+         ".ico": "image/x-icon", ".woff": "font/woff", ".woff2": "font/woff2", ".ttf": "font/ttf",
+         ".wasm": "application/wasm", ".wav": "audio/wav", ".mp3": "audio/mpeg", ".hex": "application/octet-stream"}
+
+
+def _mime(pfad: str) -> str:
+    return _MIME.get(os.path.splitext(pfad)[1].lower(), "application/octet-stream")
+
+
+TURBOWARP = os.path.join(WEB, "turbowarp")
+
+
 # --------------------------- Code-Ausführ-Engine ---------------------------
 
 class CodeRunner:
@@ -194,6 +209,16 @@ class Handler(BaseHTTPRequestHandler):
             typ = "text/javascript" if datei.endswith(".js") else (
                 "text/css" if datei.endswith(".css") else "application/octet-stream")
             return self._datei(datei, typ)
+        if p == "/turbowarp" or p.startswith("/turbowarp/"):
+            rel = p[len("/turbowarp"):].lstrip("/") or "index.html"
+            datei = os.path.normpath(os.path.join(TURBOWARP, rel))
+            if not (datei == TURBOWARP or datei.startswith(TURBOWARP + os.sep)):
+                return self._json({"fehler": "verboten"}, 403)
+            if os.path.isdir(datei):
+                datei = os.path.join(datei, "index.html")
+            return self._datei(datei, _mime(datei))
+        if p == "/api/scratch/status":
+            return self._json({"vorhanden": os.path.isfile(os.path.join(TURBOWARP, "index.html"))})
 
         if p == "/api/status":
             return self._json(status())
@@ -263,6 +288,17 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         p = urlparse(self.path).path
         d = self._body()
+
+        # ---- NOT-AUS: sofort, ohne auf laufende Bewegung zu warten (keine Sperre) ----
+        if p == "/api/panik":
+            arm.not_aus()
+            runner.stop()
+            return self._json({"ok": True, "gestoppt": True})
+
+        # Jede bewusste Bewegung hebt einen vorherigen NOT-AUS wieder auf.
+        if p in ("/api/gelenk", "/api/bewege", "/api/greifer", "/api/home", "/api/gehe_zu",
+                 "/api/tempo", "/api/pose/anfahren", "/api/aufnahme/wiedergabe"):
+            arm.weiter()
 
         # ---- Bewegung ----
         if p == "/api/gelenk":

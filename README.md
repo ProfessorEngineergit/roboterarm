@@ -16,7 +16,7 @@ Hardware in **Simulation** — auf jedem Laptop.
 - 🦾 **Eine veröffentlichte API** (`roboterarm.Arm`), die alle Ebenen aufrufen.
 - 🎨 **Generische Wahrnehmung:** beliebige Farben (`rot`, `blau`, …, eigene HSV) **oder** gelernte Objekte.
 - 🧠 **ML-Studio:** beliebige Klassen, Training in Millisekunden (kNN/Centroid/LogReg), **Confusion-Matrix** — offline, ohne NPU.
-- 🕹️ **Web-Oberfläche:** Manuell · Vision · KI-Studio · Code-Editor (mit Ausführung) · Aufnahme/Posen.
+- 🕹️ **Web-Oberfläche (vier Stufen):** Regler · Eigene Blöcke · Scratch · Python — mit jederzeit sichtbarem **NOT-AUS**.
 - 🧩 **Scratch-3-Extension** + EduBlocks/Thonny-Brücke (eine API, drei Darstellungen).
 - 🔁 **Sim/Hardware automatisch:** identischer Code am Laptop und am Board.
 - 🧪 Test-Suite, CI, Packaging, Deployment (`install.sh` + systemd).
@@ -46,12 +46,17 @@ ROBOTERARM_BACKEND=sim PYTHONPATH=. python3 examples/koordinaten.py   # inverse 
 
 ```bash
 ROBOTERARM_BACKEND=sim PYTHONPATH=. python3 service/robot_service.py
-# Browser:  http://localhost:8765/        (im Workshop: http://arm<N>.local:8765/)
+# Browser:  http://localhost:8765/   (im Workshop: http://10.42.0.1:8765/ bzw. roboterarm-<N>.local:8765)
 ```
 
-Tabs: **Manuell** (Slider, Greifer, IK), **Vision** (Live-Erkennung jeder Farbe),
-**KI-Studio** (Klassen anlegen, aufnehmen, trainieren, Confusion-Matrix, Live-Erkennung),
-**Code** (Python-Editor mit Ausführung & Ausgabe), **Aufnahme & Posen**.
+Vier Stufen, von einfach nach frei — oben rechts immer ein roter **■ NOT-AUS** (stoppt sofort
+Bewegung *und* laufenden Code):
+**Regler** (Schieberegler je Gelenk, Greifer, Tempo, IK) · **Eigene Blöcke** (Bausteine
+zusammenklicken, abspielen) · **Scratch** (natives TurboWarp offline, siehe
+[`deploy/turbowarp_holen.sh`](deploy/turbowarp_holen.sh)) · **Python** (Editor mit Ausführung & Ausgabe).
+
+> Kamera- und KI-Funktionen sind weiterhin im Code (`vision.py`, `ml.py`, Scratch-API),
+> aber bewusst **nicht** in dieser Workshop-Oberfläche — sie hält den Fokus auf Bewegung & Programmieren.
 
 **Workshop-Zugang:** Jede Station macht ihr eigenes WLAN auf
 (`sudo ./deploy/hotspot.sh <N>` → SSID `Roboterarm-<N>`); die Kinder verbinden sich und öffnen

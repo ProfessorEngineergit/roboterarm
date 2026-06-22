@@ -8,3 +8,4 @@ modell/
 .DS_Store
 *.log
 node_modules/
+web/turbowarp/

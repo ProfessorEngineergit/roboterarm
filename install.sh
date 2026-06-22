@@ -51,10 +51,12 @@ fi
 cat <<EOF
 
 == Fertig ==
-Oberfläche:        http://arm<N>.local:8765/   (oder http://<board-ip>:8765/)
+Oberfläche:        http://10.42.0.1:8765/   (am Hotspot) bzw. http://roboterarm-<N>.local:8765/
+                   Vier Reiter: Regler · Eigene Blöcke · Scratch · Python · roter NOT-AUS oben rechts
 Manuell starten:   ROBOTERARM_BACKEND=hardware "$HIER/.venv/bin/python" "$HIER/service/robot_service.py"
 Kalibrieren:       "$HIER/.venv/bin/python" "$HIER/calibrate.py"
-Test (Simulation): ROBOTERARM_BACKEND=sim "$HIER/.venv/bin/python" "$HIER/examples/find_ball.py"
+Test (Simulation): ROBOTERARM_BACKEND=sim "$HIER/.venv/bin/python" "$HIER/service/robot_service.py"
 Hotspot später:    sudo "$HIER/deploy/hotspot.sh" 1     (Abschalten: --aus)
+Scratch offline:   ./deploy/turbowarp_holen.sh         (einmalig mit Internet, für den Scratch-Tab)
 Doku Betreuer:     docs/hardware.md      Doku Kinder: docs/anleitung_kinder.md
 EOF
