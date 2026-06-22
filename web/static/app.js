@@ -67,7 +67,8 @@ async function panik() {
   try { await API.post("/api/panik"); } catch (e) {}
   const b = document.getElementById("notaus");
   if (b) { b.classList.add("blink"); setTimeout(() => b.classList.remove("blink"), 1500); }
-  flash("⏹ NOT-AUS — alles gestoppt. Bewege etwas, um weiterzumachen.");
+  flash("⏹ NOT-AUS — alle Servos stromlos. Zum Weitermachen Servos wieder einschalten.");
+  if (tab === "regler") renderRegler();   // Schalter zeigen jetzt „aus"
 }
 
 // ------------------------------- 1) Regler -------------------------------

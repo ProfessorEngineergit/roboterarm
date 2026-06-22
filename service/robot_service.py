@@ -290,11 +290,14 @@ class Handler(BaseHTTPRequestHandler):
         p = urlparse(self.path).path
         d = self._body()
 
-        # ---- NOT-AUS: sofort, ohne auf laufende Bewegung zu warten (keine Sperre) ----
+        # ---- NOT-AUS: laufende Bewegung sofort abbrechen, dann ALLE Servos stromlos ----
         if p == "/api/panik":
-            arm.not_aus()
-            runner.stop()
-            return self._json({"ok": True, "gestoppt": True})
+            arm.not_aus()                       # bricht laufende Interpolation sofort ab (keine Sperre)
+            runner.stop()                       # laufenden Python-Code beenden
+            with sperre:
+                for name in arm.cfg.gelenke:
+                    arm.servo(name, False)      # jeden Kanal stromlos schalten
+            return self._json(status())
 
         # Jede bewusste Bewegung hebt einen vorherigen NOT-AUS wieder auf.
         if p in ("/api/gelenk", "/api/bewege", "/api/greifer", "/api/home", "/api/gehe_zu",
@@ -319,8 +322,11 @@ class Handler(BaseHTTPRequestHandler):
         if p == "/api/servo":
             if d.get("name") not in arm.cfg.gelenke:
                 return self._json({"fehler": "unbekanntes Gelenk"}, 400)
+            an = bool(d.get("an", True))
+            if an:
+                arm.weiter()                    # Einschalten hebt einen vorherigen NOT-AUS auf
             with sperre:
-                arm.servo(d["name"], bool(d.get("an", True)))
+                arm.servo(d["name"], an)
             return self._json(status())
         if p == "/api/home":
             with sperre:
