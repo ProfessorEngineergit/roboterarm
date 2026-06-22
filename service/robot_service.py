@@ -220,6 +220,15 @@ class Handler(BaseHTTPRequestHandler):
             return self._datei(datei, _mime(datei))
         if p == "/api/scratch/status":
             return self._json({"vorhanden": os.path.isfile(os.path.join(TURBOWARP, "index.html"))})
+        if p == "/lernen" or p.startswith("/lernen/"):
+            rel = p[len("/lernen"):].lstrip("/") or "index.html"
+            base = os.path.join(ROOT, "lernen")
+            datei = os.path.normpath(os.path.join(base, rel))
+            if not (datei == base or datei.startswith(base + os.sep)):
+                return self._json({"fehler": "verboten"}, 403)
+            if os.path.isdir(datei):
+                datei = os.path.join(datei, "index.html")
+            return self._datei(datei, _mime(datei))
 
         if p == "/api/status":
             return self._json(status())
