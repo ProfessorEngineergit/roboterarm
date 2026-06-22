@@ -52,4 +52,4 @@ sudo ./deploy/hotspot.sh 1
 
 ## 🎬 Video (braucht Internet)
 - Deutsch, 20 Min: <https://www.youtube.com/watch?v=4xjaPQCiBfM>
-- English, Crash Course (Traversy): <https://www.youtube.com/watch?v=uwAqEzhyjtw>
+- English, Crash Course (Traversy): <https://www.youtube.com/results?search_query=Traversy+Command+Line+Crash+Course>
