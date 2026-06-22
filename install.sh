@@ -13,11 +13,15 @@ if command -v apt-get >/dev/null 2>&1; then
                           network-manager avahi-daemon || true
 fi
 
-# 2) Python-Abhängigkeiten
-echo "-- Python-Abhängigkeiten --"
-python3 -m pip install --upgrade pip
-python3 -m pip install -r "$HIER/requirements.txt"
-python3 -m pip install -e "$HIER" 2>/dev/null || echo "(editierbare Installation übersprungen)"
+# 2) Python-Abhängigkeiten (in virtualenv, kompatibel mit Debian Bookworm)
+echo "-- Python-Abhängigkeiten (venv: $HIER/.venv) --"
+python3 -m venv "$HIER/.venv"
+"$HIER/.venv/bin/pip" install --upgrade pip -q
+"$HIER/.venv/bin/pip" install -r "$HIER/requirements.txt"
+"$HIER/.venv/bin/pip" install -e "$HIER" -q 2>/dev/null || echo "(editierbare Installation übersprungen)"
+
+# 2b) Skripte ausführbar machen
+chmod +x "$HIER/deploy/"*.sh 2>/dev/null || true
 
 # 3) I2C aktivieren & Servotreiber suchen
 echo "-- I2C --"
@@ -48,9 +52,9 @@ cat <<EOF
 
 == Fertig ==
 Oberfläche:        http://arm<N>.local:8765/   (oder http://<board-ip>:8765/)
-Manuell starten:   ROBOTERARM_BACKEND=hardware PYTHONPATH="$HIER" python3 "$HIER/service/robot_service.py"
-Kalibrieren:       PYTHONPATH="$HIER" python3 "$HIER/calibrate.py"
-Test (Simulation): ROBOTERARM_BACKEND=sim PYTHONPATH="$HIER" python3 "$HIER/examples/find_ball.py"
+Manuell starten:   ROBOTERARM_BACKEND=hardware "$HIER/.venv/bin/python" "$HIER/service/robot_service.py"
+Kalibrieren:       "$HIER/.venv/bin/python" "$HIER/calibrate.py"
+Test (Simulation): ROBOTERARM_BACKEND=sim "$HIER/.venv/bin/python" "$HIER/examples/find_ball.py"
 Hotspot später:    sudo "$HIER/deploy/hotspot.sh" 1     (Abschalten: --aus)
 Doku Betreuer:     docs/hardware.md      Doku Kinder: docs/anleitung_kinder.md
 EOF
