@@ -9,7 +9,8 @@ echo "Projektordner: $HIER"
 if command -v apt-get >/dev/null 2>&1; then
   echo "-- Systempakete (apt) --"
   sudo apt-get update
-  sudo apt-get install -y python3 python3-pip python3-venv i2c-tools libgl1 || true
+  sudo apt-get install -y python3 python3-pip python3-venv i2c-tools libgl1 \
+                          network-manager avahi-daemon || true
 fi
 
 # 2) Python-Abhängigkeiten
@@ -33,14 +34,23 @@ if [[ "${a:-N}" =~ ^[jJyY]$ ]]; then
   sudo sed -i "s#__ROOT__#$HIER#g; s#__USER__#${SUDO_USER:-$USER}#g" "$SVC"
   sudo systemctl daemon-reload
   sudo systemctl enable --now roboterarm
-  echo "Dienst aktiv. Oberfläche: http://<board-ip>:8765/"
+  echo "Dienst aktiv (Autostart)."
+fi
+
+# 5) Optionaler WLAN-Hotspot (jede Station ein eigenes WLAN, offline-tauglich)
+read -rp "Diese Station als eigenen WLAN-Hotspot einrichten? [j/N] " h || h=N
+if [[ "${h:-N}" =~ ^[jJyY]$ ]]; then
+  read -rp "  Stationsnummer (1/2/3 …) [1]: " NR || NR=1
+  sudo bash "$HIER/deploy/hotspot.sh" "${NR:-1}"
 fi
 
 cat <<EOF
 
 == Fertig ==
+Oberfläche:        http://arm<N>.local:8765/   (oder http://<board-ip>:8765/)
 Manuell starten:   ROBOTERARM_BACKEND=hardware PYTHONPATH="$HIER" python3 "$HIER/service/robot_service.py"
 Kalibrieren:       PYTHONPATH="$HIER" python3 "$HIER/calibrate.py"
 Test (Simulation): ROBOTERARM_BACKEND=sim PYTHONPATH="$HIER" python3 "$HIER/examples/find_ball.py"
-Doku:              docs/hardware.md
+Hotspot später:    sudo "$HIER/deploy/hotspot.sh" 1     (Abschalten: --aus)
+Doku Betreuer:     docs/hardware.md      Doku Kinder: docs/anleitung_kinder.md
 EOF

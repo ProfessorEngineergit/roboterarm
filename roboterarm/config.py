@@ -23,8 +23,8 @@ class GelenkConfig:
     max_winkel: float = 180.0        # mechanische Obergrenze (Grad)
     home: float = 90.0               # Ruhestellung
     offset: float = 0.0              # Kalibrier-Offset (mechanischer Nullpunkt)
-    puls_min: int = 500              # Pulsbreite (µs) bei 0°
-    puls_max: int = 2500             # Pulsbreite (µs) bei 180°
+    puls_min: int = 500              # Pulsbreite (µs) bei 0°  (MG90S)
+    puls_max: int = 2400             # Pulsbreite (µs) bei 180° (MG90S typ. ~500–2400)
     invertiert: bool = False         # Drehrichtung umkehren
 
 
@@ -43,10 +43,11 @@ class Config:
     greifer_auf: float = 95.0
     greifer_zu: float = 35.0
 
-    # Armgeometrie (mm) — EEZYbotARM MK2, ungefähr; auf echter HW kalibrieren.
-    laenge_oberarm: float = 80.0
-    laenge_unterarm: float = 80.0
-    basis_hoehe: float = 75.0
+    # Armgeometrie (mm) — EEZYbotARM MK1 (Quelle: meisben/easyEEZYbotARM, L1/L2/L3);
+    # auf echter HW via calibrate.py final justieren.
+    laenge_oberarm: float = 80.0     # MK1 L2
+    laenge_unterarm: float = 80.0    # MK1 L3
+    basis_hoehe: float = 61.0        # MK1 L1
 
     # Ball-Farbbereich (HSV, OpenCV-Konvention: H 0..179, S/V 0..255). Default ~orange.
     hsv_min: tuple = (5, 120, 120)

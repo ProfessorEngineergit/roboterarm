@@ -183,6 +183,10 @@ class Handler(BaseHTTPRequestHandler):
 
         if p in ("/", "/index.html"):
             return self._datei(os.path.join(WEB, "index.html"))
+        if p == "/roboterarm_extension.js":
+            # Scratch/TurboWarp-Extension direkt vom Board laden (Ein-Klick, offline).
+            return self._datei(os.path.join(ROOT, "scratch", "roboterarm_extension.js"),
+                               "text/javascript")
         if p.startswith("/static/"):
             datei = os.path.normpath(os.path.join(WEB, p.lstrip("/")))
             if not datei.startswith(os.path.join(WEB, "static")):

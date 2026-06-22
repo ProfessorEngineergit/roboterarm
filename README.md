@@ -23,7 +23,7 @@ Hardware in **Simulation** — auf jedem Laptop.
 
 ## 🛠️ Bauen & Drucken (es wird nichts gekauft)
 
-Die Arm-Teile (**EEZYbotARM MK2**) werden von den Betreuer:innen **vorab** gedruckt; jedes
+Die Arm-Teile (**EEZYbotARM MK1**) werden von den Betreuer:innen **vorab** gedruckt; jedes
 Kind druckt im Workshop **genau ein eigenes Teil** — sein **Namensschild** — als 3D-Druck-Erlebnis:
 
 ```bash
@@ -46,12 +46,16 @@ ROBOTERARM_BACKEND=sim PYTHONPATH=. python3 examples/koordinaten.py   # inverse 
 
 ```bash
 ROBOTERARM_BACKEND=sim PYTHONPATH=. python3 service/robot_service.py
-# Browser:  http://localhost:8765/        (im Workshop: http://<board-ip>:8765/)
+# Browser:  http://localhost:8765/        (im Workshop: http://arm<N>.local:8765/)
 ```
 
 Tabs: **Manuell** (Slider, Greifer, IK), **Vision** (Live-Erkennung jeder Farbe),
 **KI-Studio** (Klassen anlegen, aufnehmen, trainieren, Confusion-Matrix, Live-Erkennung),
 **Code** (Python-Editor mit Ausführung & Ausgabe), **Aufnahme & Posen**.
+
+**Workshop-Zugang:** Jede Station macht ihr eigenes WLAN auf
+(`sudo ./deploy/hotspot.sh <N>` → SSID `Roboterarm-<N>`); die Kinder verbinden sich und öffnen
+`http://arm<N>.local:8765`. Schritt-für-Schritt fürs Kind: **[docs/anleitung_kinder.md](docs/anleitung_kinder.md)**.
 
 ## Die eine Schnittstelle
 
@@ -93,7 +97,7 @@ calibrate.py       Servo-Kalibrier-Assistent      install.sh   Inbetriebnahme
 
 ## Hardware
 
-Radxa ROCK Pi 4 SE + InnoMaker 16 MP USB-UVC-Kamera + PCA9685 + EEZYbotARM MK2 (3× MG996R + SG90).
+Radxa ROCK Pi 4 SE + InnoMaker 16 MP USB-UVC-Kamera + PCA9685 + EEZYbotARM MK1 (4× MG90S).
 - **Bauen & 3D-Druck** (Arm vorab, ein Teil pro Kind, nichts kaufen): **[hardware/3d-druck/README.md](hardware/3d-druck/README.md)**
 - **Elektronik, Verkabelung, Kalibrierung & Fehlersuche:** **[docs/hardware.md](docs/hardware.md)**
 

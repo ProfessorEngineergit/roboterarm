@@ -1,5 +1,5 @@
 // Kamera-Clip für den Roboterarm — alternatives "Kinder-Teil" zum Selberdrucken.
-// Hält die kleine USB-Kamera an der drehenden Säule/Schulter (Auge dreht mit der Basis).
+// Hält die InnoMaker-16-MP-USB-Kamera an der drehenden Säule/Schulter (Auge dreht mit der Basis).
 // Parametrisch: Maße an die eigene Kamera anpassen und mit OpenSCAD als STL exportieren.
 //
 //   openscad -o kamera_clip.stl kamera_clip.scad
@@ -7,8 +7,10 @@
 // Druck: PLA, 0.2 mm, 20 % Infill, ohne Stützen (flach aufs Bett legen).
 
 // ---- Parameter (mm) ----
-kamera_breite   = 28;   // Breite der Kameraplatine/-fassung
-kamera_dicke    = 9;    // Dicke der Kamera
+// InnoMaker 16 MP (IMX298): quadratische Platine 32 x 32 mm, 4x M2-Löcher.
+// Werte ggf. am realen Modul nachmessen (Linsenhöhe je nach Fokus-Mechanik).
+kamera_breite   = 32;   // Breite der Kameraplatine/-fassung
+kamera_dicke    = 10;   // Dicke (Platine + Linsenmodul)
 wand            = 2.4;  // Wandstärke
 lippe           = 2.0;  // Haltelippe vorn
 platte_dicke    = 3.0;  // Montageplatte
