@@ -90,6 +90,31 @@ h2.titel{font-size:34px;font-weight:800;}
   border-radius:9px;padding:5px 11px;font-size:12px;cursor:pointer;}
 .copy:hover{color:var(--text);border-color:var(--primary);}
 
+/* Reveal beim Scrollen */
+.reveal{opacity:0;transform:translateY(26px);transition:opacity .7s ease,transform .7s cubic-bezier(.2,.7,.2,1);}
+.reveal.an{opacity:1;transform:none;}
+
+/* Epische Geschichts-Sektion */
+.epic{position:relative;background:linear-gradient(180deg,#070a10,#0b0f18);border-top:1px solid var(--outline);border-bottom:1px solid var(--outline);overflow:hidden;}
+.epic::before{content:"";position:absolute;inset:0;
+  background-image:linear-gradient(rgba(110,243,165,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(110,243,165,.05) 1px,transparent 1px);
+  background-size:34px 34px;-webkit-mask:radial-gradient(75% 60% at 50% 30%,#000 30%,transparent 78%);mask:radial-gradient(75% 60% at 50% 30%,#000 30%,transparent 78%);animation:drift 24s linear infinite;}
+@keyframes drift{to{background-position:0 340px,340px 0;}}
+.epic .wrap{position:relative;}
+.term-green{color:var(--termgreen);font-family:ui-monospace,monospace;}
+
+/* Timeline */
+.tl{position:relative;margin-top:34px;padding-left:34px;}
+.tl::before{content:"";position:absolute;left:9px;top:6px;bottom:6px;width:2px;background:linear-gradient(var(--termgreen),var(--violet));opacity:.5;}
+.tl-item{position:relative;margin-bottom:30px;}
+.tl-item::before{content:"";position:absolute;left:-30px;top:5px;width:14px;height:14px;border-radius:50%;background:var(--termgreen);box-shadow:0 0 0 5px rgba(110,243,165,.15);}
+.tl-jahr{font-family:ui-monospace,monospace;font-size:13px;font-weight:800;color:var(--termgreen);letter-spacing:.05em;}
+.tl-item h3{font-size:20px;margin:3px 0 5px;}
+.tl-item p{color:var(--muted);margin:0;max-width:62ch;}
+
+/* Typewriter-Cursor */
+.tw-cursor{display:inline-block;width:9px;height:1.05em;background:var(--termgreen);vertical-align:-2px;margin-left:1px;animation:blink 1s steps(1) infinite;}
+
 .foot{padding:40px 0 60px;color:var(--muted);font-size:13.5px;border-top:1px solid var(--outline);}
 .badge{display:inline-block;background:var(--surface-2);border:1px solid var(--outline);border-radius:999px;
   padding:3px 12px;font-size:12.5px;color:var(--muted);}

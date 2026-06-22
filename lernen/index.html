@@ -4,6 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Terminal-Schule 🐢 — Roboterarm-Workshop</title>
+<meta name="theme-color" content="#0a0c11">
+<meta name="description" content="Lerne die Kommandozeile — epische Geschichte, die wichtigsten Befehle und ein Übungs-Trainer mit 3 Stufen. Komplett offline.">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -11,108 +15,116 @@
 <nav class="nav">
   <span class="logo">🐢 Terminal-Schule</span>
   <span class="links">
+    <a href="#geschichte">Geschichte</a>
     <a href="#was">Was ist das?</a>
     <a href="#oeffnen">Öffnen</a>
     <a href="#befehle">Befehle</a>
     <a href="trainer/">Trainer</a>
-    <a href="#skript">Roboter-Skript</a>
+    <a href="#skript">Roboter</a>
   </span>
 </nav>
 
 <!-- HERO -->
-<header class="wrap" style="padding:64px 22px 30px;">
+<header class="wrap" style="padding:64px 22px 26px;">
   <div class="grid g2" style="align-items:center;gap:34px;">
-    <div>
+    <div class="reveal an">
       <span class="badge">🤖 Roboterarm-Workshop · Tag 2</span>
-      <h1 style="font-size:48px;font-weight:900;margin:14px 0 10px;">
+      <h1 style="font-size:50px;font-weight:900;margin:14px 0 10px;line-height:1.05;">
         Sprich mit dem <span class="grad-text">Computer</span>.
       </h1>
-      <p class="lead">Kein Klicken — <b>Tippen</b>. Das Terminal ist die schnellste Art, einem Computer
-        zu sagen, was er tun soll. Heute lernst du die wichtigsten Zauberwörter und steuerst damit deinen Roboterarm.</p>
+      <p class="lead">Bevor es Maus und Fenster gab, gab es nur <b>eine</b> Art, einem Computer etwas zu sagen:
+        das Terminal. Heute ist es das Werkzeug der Profis — und gleich auch deins.</p>
       <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:22px;">
-        <a class="btn primary gross" href="#was">Los geht's ↓</a>
-        <a class="btn green gross" href="trainer/">🎮 Zum Übungs-Trainer</a>
+        <a class="btn primary gross" href="#geschichte">Die Geschichte ↓</a>
+        <a class="btn green gross" href="trainer/">🎮 Trainer · 3 Stufen</a>
       </div>
     </div>
     <div class="float">
       <div class="fenster tilt">
         <div class="bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
           <span class="titel">roboter@arm: ~</span></div>
-        <div class="term"><span class="pr">roboter@arm</span>:<span class="dir">~</span>$ <span class="cmd">ls</span>
-<span class="dir">roboterarm/</span>  bilder/  notizen.txt
-<span class="pr">roboter@arm</span>:<span class="dir">~</span>$ <span class="cmd">cd roboterarm</span>
-<span class="pr">roboter@arm</span>:<span class="dir">~/roboterarm</span>$ <span class="cmd">python3 service/robot_service.py</span>
-<span class="ok">✓ Server läuft: http://10.42.0.1:8765</span>
-<span class="pr">roboter@arm</span>:<span class="dir">~/roboterarm</span>$ <span class="blink">▌</span></div>
+        <div class="term" id="hero-term"><span class="pr">roboter@arm</span>:<span class="dir">~</span>$ <span id="tw"></span><span class="tw-cursor"></span></div>
       </div>
     </div>
   </div>
 </header>
 
+<!-- EPIC: GESCHICHTE -->
+<section id="geschichte" class="epic"><div class="wrap">
+  <span class="kapitel reveal"><span class="nr">★</span> Eine kurze, epische Geschichte</span>
+  <h2 class="titel reveal">Vom Fernschreiber zum Hacker-Werkzeug</h2>
+  <p class="lead reveal">Die Kommandozeile ist über <b>70 Jahre alt</b> — und mächtiger denn je. Eine Reise in fünf Stationen:</p>
+  <div class="tl">
+    <div class="tl-item reveal"><div class="tl-jahr">1950er</div><h3>⌨️ Der Fernschreiber</h3>
+      <p>Die ersten Computer füllten ganze Räume. Es gab <b>keinen Bildschirm</b>. Man tippte Befehle auf einem
+        Fernschreiber (Teletype) — die Antwort kam auf Papier. So „sprach" man mit Maschinen.</p></div>
+    <div class="tl-item reveal"><div class="tl-jahr">1969</div><h3>🐧 Unix wird geboren</h3>
+      <p>In den Bell Labs erfinden Ken Thompson und Dennis Ritchie <b>Unix</b> — und die <b>Shell</b>: Du tippst
+        einen Befehl, der Computer gehorcht sofort. Diese Idee steckt heute in fast jedem Server, Handy und Roboter.</p></div>
+    <div class="tl-item reveal"><div class="tl-jahr">1977</div><h3>📜 Aus Befehlen werden Programme</h3>
+      <p>Die Bourne Shell bringt Variablen, Schleifen und Skripte. Plötzlich kann man ganze Abläufe automatisieren.
+        Unser modernes <span class="term-green">bash</span> heißt sogar „<b>B</b>ourne <b>a</b>gain <b>sh</b>ell".</p></div>
+    <div class="tl-item reveal"><div class="tl-jahr">1984</div><h3>🖱️ Die GUI kommt — und das Terminal bleibt</h3>
+      <p>Der Macintosh bringt Maus und Fenster für alle. Bequem! Aber die Kommandozeile verschwindet nie —
+        sie wandert nur <b>unter</b> die bunte Oberfläche. Jeder Klick ist im Grunde ein Befehl.</p></div>
+    <div class="tl-item reveal"><div class="tl-jahr">heute</div><h3>💻 Das Werkzeug der Profis</h3>
+      <p>Entwickler, Hacker, Wissenschaftler, Server-Admins — alle steuern per Terminal. Es ist schneller als jede
+        Maus und lässt sich automatisieren. <b>Genau damit steuerst du gleich deinen Roboterarm.</b></p></div>
+  </div>
+  <div class="karte reveal" style="margin-top:14px;">
+    📚 <b>Noch tiefer eintauchen?</b> Die legendäre AT&amp;T-Unix-Doku von 1982 (mit den Erfindern höchstpersönlich) und
+    Neal Stephensons Essay <i>„In the Beginning… Was the Command Line"</i> (1999):
+    <a href="https://www.youtube.com/results?search_query=AT%26T+1982+Unix+documentary+Bell+Labs" target="_blank" rel="noopener">Unix-Doku (1982)</a> ·
+    <a href="https://en.wikipedia.org/wiki/In_the_Beginning..._Was_the_Command_Line" target="_blank" rel="noopener">Stephenson-Essay</a>
+  </div>
+</div></section>
+
 <!-- 1. WAS IST DAS -->
 <section id="was"><div class="wrap">
-  <span class="kapitel"><span class="nr">1</span> Was ist ein Terminal?</span>
-  <h2 class="titel">Zwei Wege, dem Computer etwas zu sagen</h2>
-  <p class="lead">Du kennst den ersten Weg schon: klicken mit der Maus. Der zweite ist das Terminal — du tippst
-    den Befehl direkt. Schneller, mächtiger, und Computerprofis lieben es.</p>
+  <span class="kapitel reveal"><span class="nr">1</span> Was ist ein Terminal?</span>
+  <h2 class="titel reveal">Zwei Wege, dem Computer etwas zu sagen</h2>
   <div class="grid g2" style="margin-top:26px;">
-    <div class="karte">
+    <div class="karte reveal">
       <h3>🖱️ Mit der Maus (GUI)</h3>
-      <svg viewBox="0 0 320 180" style="width:100%;height:auto;border-radius:12px;background:#0e1320;">
-        <rect x="20" y="20" width="280" height="140" rx="10" fill="#172033" stroke="#2b3344"/>
-        <rect x="20" y="20" width="280" height="26" rx="10" fill="#1f2a40"/>
-        <circle cx="36" cy="33" r="5" fill="#ff5f57"/><circle cx="52" cy="33" r="5" fill="#febc2e"/><circle cx="68" cy="33" r="5" fill="#28c840"/>
-        <rect x="40" y="64" width="58" height="48" rx="8" fill="#26314c"/><text x="69" y="128" fill="#9fb0cc" font-size="11" text-anchor="middle">Ordner</text>
-        <rect x="120" y="64" width="58" height="48" rx="8" fill="#26314c"/><text x="149" y="128" fill="#9fb0cc" font-size="11" text-anchor="middle">Datei</text>
-        <path d="M236 96 l16 6 -6 4 6 9 -4 2 -6 -9 -5 4 z" fill="#fff"/>
+      <svg viewBox="0 0 320 170" style="width:100%;height:auto;border-radius:12px;background:#0e1320;">
+        <rect x="20" y="18" width="280" height="134" rx="10" fill="#172033" stroke="#2b3344"/>
+        <rect x="20" y="18" width="280" height="26" rx="10" fill="#1f2a40"/>
+        <circle cx="36" cy="31" r="5" fill="#ff5f57"/><circle cx="52" cy="31" r="5" fill="#febc2e"/><circle cx="68" cy="31" r="5" fill="#28c840"/>
+        <rect x="44" y="62" width="56" height="46" rx="8" fill="#26314c"/><text x="72" y="124" fill="#9fb0cc" font-size="11" text-anchor="middle">Ordner</text>
+        <rect x="124" y="62" width="56" height="46" rx="8" fill="#26314c"/><text x="152" y="124" fill="#9fb0cc" font-size="11" text-anchor="middle">Datei</text>
+        <path d="M238 92 l16 6 -6 4 6 9 -4 2 -6 -9 -5 4 z" fill="#fff"/>
       </svg>
-      <p class="lead" style="font-size:15px;margin-top:12px;">Du siehst Bildchen und klickst. Einfach — aber langsam,
-        wenn du <b>viele</b> Dinge machen willst.</p>
+      <p class="lead" style="font-size:15px;margin-top:12px;">Du siehst Bildchen und klickst. Einfach — aber langsam bei <b>vielen</b> Schritten.</p>
     </div>
-    <div class="karte" style="border-color:#3a4a7a;">
+    <div class="karte reveal" style="border-color:#3a4a7a;">
       <h3>⌨️ Mit dem Terminal (CLI)</h3>
-      <div class="fenster">
-        <div class="bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="titel">Terminal</span></div>
+      <div class="fenster"><div class="bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="titel">Terminal</span></div>
         <div class="term" style="font-size:13px;padding:14px;"><span class="pr">du</span>$ <span class="cmd">ls</span>
 <span class="dir">ordner/</span>  datei.txt
-<span class="pr">du</span>$ <span class="cmd">öffne datei.txt</span> <span class="blink">▌</span></div>
-      </div>
-      <p class="lead" style="font-size:15px;margin-top:12px;">Du <b>tippst</b>, was passieren soll. Blitzschnell, und
-        du kannst sogar ganze Abläufe automatisieren. Das lernst du jetzt. 🚀</p>
-    </div>
-  </div>
-  <div class="karte" style="margin-top:18px;display:flex;gap:16px;align-items:center;flex-wrap:wrap;">
-    <span style="font-size:30px;">🎬</span>
-    <div style="flex:1;min-width:240px;">
-      <b>Du hast das Video schon gesehen</b> — super! Falls du es nochmal brauchst, findest du den Link ganz unten.
-      Hier geht's jetzt ums <b>Selbermachen</b>.
+<span class="pr">du</span>$ <span class="cmd">öffne datei.txt</span> <span class="blink">▌</span></div></div>
+      <p class="lead" style="font-size:15px;margin-top:12px;">Du <b>tippst</b>, was passieren soll. Blitzschnell — und automatisierbar. 🚀</p>
     </div>
   </div>
 </div></section>
 
 <!-- 2. ÖFFNEN -->
 <section id="oeffnen"><div class="wrap">
-  <span class="kapitel"><span class="nr">2</span> Terminal öffnen</span>
-  <h2 class="titel">So startest du es</h2>
-  <p class="lead">Auf jedem Computer gibt es ein Terminal. So findest du es:</p>
+  <span class="kapitel reveal"><span class="nr">2</span> Terminal öffnen</span>
+  <h2 class="titel reveal">So startest du es</h2>
   <div class="grid g3" style="margin-top:26px;">
-
-    <div class="karte">
+    <div class="karte reveal">
       <h3>🪟 Windows · Weg 1</h3>
       <p class="lead" style="font-size:14.5px;">Drücke <b>Windows-Taste + R</b>, tippe <code>cmd</code>, Enter.</p>
       <svg viewBox="0 0 280 150" style="width:100%;height:auto;">
         <rect x="10" y="22" width="260" height="106" rx="9" fill="#1b2742" stroke="#2f3f63"/>
-        <rect x="10" y="22" width="260" height="26" rx="9" fill="#24345a"/>
-        <text x="26" y="39" fill="#cdd9f2" font-size="12">Ausführen</text>
+        <rect x="10" y="22" width="260" height="26" rx="9" fill="#24345a"/><text x="26" y="39" fill="#cdd9f2" font-size="12">Ausführen</text>
         <text x="26" y="74" fill="#9fb0cc" font-size="11">Öffnen:</text>
         <rect x="26" y="82" width="170" height="26" rx="6" fill="#0e1626" stroke="#3a4f7e"/>
-        <text x="36" y="99" fill="#fff" font-size="13" font-family="monospace">cmd<tspan class="blink">▌</tspan></text>
-        <rect x="206" y="82" width="48" height="26" rx="6" fill="#3b6fe0"/>
-        <text x="230" y="99" fill="#fff" font-size="12" text-anchor="middle">OK</text>
+        <text x="36" y="99" fill="#fff" font-size="13" font-family="monospace">cmd</text>
+        <rect x="206" y="82" width="48" height="26" rx="6" fill="#3b6fe0"/><text x="230" y="99" fill="#fff" font-size="12" text-anchor="middle">OK</text>
       </svg>
     </div>
-
-    <div class="karte">
+    <div class="karte reveal">
       <h3>🪟 Windows · Weg 2</h3>
       <p class="lead" style="font-size:14.5px;">Klicke <b>Start</b>, tippe <code>Terminal</code> und öffne die App.</p>
       <svg viewBox="0 0 280 150" style="width:100%;height:auto;">
@@ -120,124 +132,116 @@
         <rect x="26" y="26" width="228" height="28" rx="14" fill="#0e1626" stroke="#3a4f7e"/>
         <circle cx="44" cy="40" r="7" fill="none" stroke="#7c9dff" stroke-width="2"/><line x1="49" y1="45" x2="55" y2="51" stroke="#7c9dff" stroke-width="2"/>
         <text x="64" y="45" fill="#fff" font-size="12" font-family="monospace">Terminal</text>
-        <rect x="26" y="64" width="228" height="26" rx="6" fill="#22305a"/>
-        <text x="38" y="81" fill="#dbe4ff" font-size="12">⌨️  Terminal — App</text>
-        <rect x="26" y="96" width="228" height="22" rx="6" fill="#1a2540"/>
-        <text x="38" y="111" fill="#9fb0cc" font-size="11">Eingabeaufforderung</text>
+        <rect x="26" y="64" width="228" height="26" rx="6" fill="#22305a"/><text x="38" y="81" fill="#dbe4ff" font-size="12">⌨️  Terminal — App</text>
       </svg>
     </div>
-
-    <div class="karte" style="border-color:#3a4a7a;">
+    <div class="karte reveal" style="border-color:#3a4a7a;">
       <h3>🤖 Am Roboter (wir!)</h3>
-      <p class="lead" style="font-size:14.5px;">Wir steuern den <b>Roboter-Computer</b> aus der Ferne — mit <code>ssh</code>.</p>
+      <p class="lead" style="font-size:14.5px;">Wir steuern den Roboter-Computer aus der Ferne — mit <code>ssh</code>.</p>
       <div class="fenster"><div class="bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="titel">Terminal</span></div>
         <div class="term" style="font-size:12.5px;padding:13px;"><span class="pr">du</span>$ <span class="cmd">ssh radxa@roboterarm-01.local</span>
 <span class="mut">Passwort:</span> <span class="blink">▌</span>
 <span class="ok">✓ Willkommen am Roboterarm!</span></div></div>
     </div>
   </div>
-  <p class="lead" style="margin-top:16px;font-size:15px;">💡 Auf dem <b>Mac</b>: Drücke <b>Cmd + Leertaste</b>,
-    tippe <code>Terminal</code>, Enter. Genau dasselbe.</p>
+  <p class="lead reveal" style="margin-top:16px;font-size:15px;">💡 Auf dem <b>Mac</b>: <b>Cmd + Leertaste</b>, tippe <code>Terminal</code>, Enter.</p>
 </div></section>
 
 <!-- 3. BEFEHLE -->
 <section id="befehle"><div class="wrap">
-  <span class="kapitel"><span class="nr">3</span> Die wichtigsten Befehle</span>
-  <h2 class="titel">Deine 8 Zauberwörter</h2>
-  <p class="lead">Mit diesen acht Befehlen kommst du fast überall hin. Probier sie gleich danach im Trainer aus.</p>
-  <div class="grid g4" style="margin-top:26px;" id="befehle-grid"></div>
+  <span class="kapitel reveal"><span class="nr">3</span> Die wichtigsten Befehle</span>
+  <h2 class="titel reveal">Deine Zauberwörter</h2>
+  <p class="lead reveal">Damit kommst du fast überall hin. Üb sie gleich im Trainer — Stufe für Stufe.</p>
+  <div class="grid g4 reveal" style="margin-top:26px;" id="befehle-grid"></div>
 </div></section>
 
 <!-- CTA Trainer -->
-<section style="padding:30px 0;"><div class="wrap">
-  <div class="karte" style="text-align:center;background:linear-gradient(135deg,#1a2444,#221a44);border-color:#3a4a7a;">
+<section style="padding:26px 0;"><div class="wrap">
+  <div class="karte reveal" style="text-align:center;background:linear-gradient(135deg,#1a2444,#221a44);border-color:#3a4a7a;">
     <h2 style="font-size:30px;">🎮 Jetzt selbst ausprobieren!</h2>
-    <p class="lead" style="margin:0 auto 18px;">Im Trainer tippst du echte Befehle in ein simuliertes Terminal —
-      Schritt für Schritt, mit Punkten und Belohnung. Ganz ohne etwas kaputt machen zu können.</p>
+    <p class="lead" style="margin:0 auto 18px;">Echte Befehle in einem simulierten Terminal — <b>3 Stufen</b> vom Küken zum
+      Roboter-Profi, mit Punkten, Serie und Belohnung. Kaputt machen unmöglich.</p>
     <a class="btn green gross" href="trainer/">🚀 Trainer starten</a>
   </div>
 </div></section>
 
 <!-- 4. ROBOTER-SKRIPT -->
 <section id="skript"><div class="wrap">
-  <span class="kapitel"><span class="nr">4</span> Roboterarm-Spickzettel</span>
-  <h2 class="titel">Alle Befehle für den Roboter</h2>
-  <p class="lead">Wenn du am Roboter-Computer bist (per <code>ssh</code>), brauchst du genau diese Befehle.
-    Klick auf „Kopieren" und füg sie ins Terminal ein.</p>
-
-  <div class="grid g2" style="margin-top:24px;">
-    <div>
-      <h3>① Projekt holen &amp; einrichten</h3>
+  <span class="kapitel reveal"><span class="nr">4</span> Roboterarm-Spickzettel</span>
+  <h2 class="titel reveal">Alle Befehle für den Roboter</h2>
+  <div class="grid g2 reveal" style="margin-top:24px;">
+    <div><h3>① Projekt holen &amp; einrichten</h3>
       <div class="code"><button class="copy">Kopieren</button><span class="c"># Projekt vom Server holen</span>
 git clone https://github.com/ProfessorEngineergit/roboterarm ~/roboterarm
 cd ~/roboterarm
-<span class="c"># Alles installieren (Pakete + Servos)</span>
-./install.sh</div>
-    </div>
-    <div>
-      <h3>② Server starten</h3>
-      <div class="code"><button class="copy">Kopieren</button><span class="c"># Den Roboter-Webserver starten</span>
+<span class="c"># Alles installieren</span>
+./install.sh</div></div>
+    <div><h3>② Server starten</h3>
+      <div class="code"><button class="copy">Kopieren</button><span class="c"># Roboter-Webserver starten</span>
 cd ~/roboterarm
 python3 service/robot_service.py
-<span class="c"># Dann im Browser öffnen:</span>
-<span class="p"># http://10.42.0.1:8765</span></div>
-    </div>
-    <div>
-      <h3>③ Neueste Version laden</h3>
-      <div class="code"><button class="copy">Kopieren</button><span class="c"># Updates holen + neu starten</span>
-cd ~/roboterarm
+<span class="p"># Browser: http://10.42.0.1:8765</span></div></div>
+    <div><h3>③ Neueste Version laden</h3>
+      <div class="code"><button class="copy">Kopieren</button>cd ~/roboterarm
 git pull
-sudo systemctl restart roboterarm</div>
-    </div>
-    <div>
-      <h3>④ Kalibrieren</h3>
-      <div class="code"><button class="copy">Kopieren</button><span class="c"># Servos einstellen (oder im Web-Tab ⚙)</span>
+sudo systemctl restart roboterarm</div></div>
+    <div><h3>④ Kalibrieren</h3>
+      <div class="code"><button class="copy">Kopieren</button><span class="c"># oder im Web-Tab ⚙ Kalibrieren</span>
 cd ~/roboterarm
-python3 calibrate.py</div>
-    </div>
+python3 calibrate.py</div></div>
   </div>
 </div></section>
 
 <footer class="foot"><div class="wrap">
   <div class="grid g2" style="align-items:center;">
-    <div>
-      <b>🎬 Video nochmal ansehen</b> (braucht Internet, fürs Beamer):<br>
-      <a href="https://www.youtube.com/watch?v=4xjaPQCiBfM" target="_blank" rel="noopener">Kommandozeile lernen in 20 Minuten (Deutsch)</a> ·
-      <a href="https://www.youtube.com/results?search_query=Traversy+Command+Line+Crash+Course" target="_blank" rel="noopener">Command Line Crash Course (English, Traversy)</a>
-    </div>
+    <div>📲 <b>Tipp:</b> Diese Seite lässt sich <b>installieren</b> (Browser-Menü → „Zum Startbildschirm/Installieren") und
+      funktioniert dann <b>komplett offline</b>.</div>
     <div style="text-align:right;">
-      <span class="badge">Roboterarm-Workshop · Terminal-Schule</span><br>
-      <span style="font-size:12px;">Komplett offline · läuft am Board unter <code>/lernen/</code></span>
+      <span class="badge">Terminal-Schule · Roboterarm-Workshop</span><br>
+      <span style="font-size:12px;">Offline-fähig (PWA) · am Board unter <code>/lernen/</code></span>
     </div>
   </div>
 </div></footer>
 
 <script>
-const BEFEHLE = [
+/* Typewriter im Hero */
+const TW=["ls","cd roboterarm","python3 service/robot_service.py   ✓ Server läuft!","git pull","help"];
+const tw=document.getElementById("tw"); let ti=0,ci=0,del=false;
+function tick(){
+  const s=TW[ti]; tw.textContent=s.slice(0,ci);
+  if(!del){ ci++; if(ci>s.length){del=true;return setTimeout(tick,1400);} }
+  else { ci--; if(ci<0){del=false;ti=(ti+1)%TW.length;ci=0;} }
+  setTimeout(tick, del?34:70);
+}
+tick();
+
+/* Befehls-Karten */
+const BEFEHLE=[
   ["📍","pwd","Wo bin ich gerade?","$ pwd\n/home/roboter"],
   ["📂","ls","Was ist hier drin?","$ ls\nroboterarm/  notizen.txt"],
-  ["🚪","cd","Geh in einen Ordner","$ cd roboterarm\n$ pwd\n/home/roboter/roboterarm"],
-  ["↩️","cd ..","Einen Ordner zurück","$ cd ..\n$ pwd\n/home/roboter"],
-  ["👀","cat","Zeig den Inhalt einer Datei","$ cat notizen.txt\nHallo Roboter!"],
-  ["✨","mkdir","Mach einen neuen Ordner","$ mkdir posen\n$ ls\nposen/"],
-  ["📝","touch","Erstell eine leere Datei","$ touch idee.txt\n$ ls\nidee.txt"],
-  ["🧹","clear","Mach den Bildschirm sauber","$ clear"],
+  ["🚪","cd","Geh in einen Ordner","$ cd roboterarm"],
+  ["↩️","cd ..","Einen Ordner zurück","$ cd .."],
+  ["👀","cat","Datei-Inhalt zeigen","$ cat notizen.txt\nHallo!"],
+  ["🔎","grep","In Dateien suchen","$ grep Arm notizen.txt"],
+  ["✨","mkdir","Neuen Ordner machen","$ mkdir posen"],
+  ["🧹","clear","Bildschirm leeren","$ clear"],
 ];
-document.getElementById("befehle-grid").innerHTML = BEFEHLE.map(([i,c,t,m]) => `
-  <div class="cmd-karte">
-    <div class="ikon" style="font-size:22px;">${i}</div>
-    <code>${c}</code>
-    <p>${t}</p>
-    <div class="mini">${m.replace(/\n/g,"<br>")}</div>
-  </div>`).join("");
+document.getElementById("befehle-grid").innerHTML=BEFEHLE.map(([i,c,t,m])=>`
+  <div class="cmd-karte"><div class="ikon" style="font-size:22px;">${i}</div>
+    <code>${c}</code><p>${t}</p><div class="mini">${m.replace(/\n/g,"<br>")}</div></div>`).join("");
 
-document.querySelectorAll(".copy").forEach(btn => btn.addEventListener("click", () => {
-  const code = btn.parentElement.cloneNode(true);
-  code.querySelector(".copy").remove();
-  navigator.clipboard.writeText(code.textContent.trim()).then(() => {
-    btn.textContent = "✓ Kopiert"; setTimeout(() => btn.textContent = "Kopieren", 1500);
-  }).catch(() => { btn.textContent = "⌘C drücken"; });
+/* Kopier-Buttons */
+document.querySelectorAll(".copy").forEach(b=>b.addEventListener("click",()=>{
+  const c=b.parentElement.cloneNode(true); c.querySelector(".copy").remove();
+  navigator.clipboard.writeText(c.textContent.trim()).then(()=>{b.textContent="✓ Kopiert";setTimeout(()=>b.textContent="Kopieren",1500);}).catch(()=>b.textContent="⌘C");
 }));
+
+/* Reveal beim Scrollen */
+const io=new IntersectionObserver((es)=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add("an");io.unobserve(e.target);}}),{threshold:.12});
+document.querySelectorAll(".reveal").forEach(el=>io.observe(el));
+
+/* Service Worker (Offline-Caching) */
+if("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(()=>{});
 </script>
 </body>
 </html>

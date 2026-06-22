@@ -4,26 +4,46 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Shell-Trainer 🎮 — Terminal-Schule</title>
+<meta name="theme-color" content="#0a0c11">
+<link rel="manifest" href="../manifest.json">
+<link rel="icon" href="../icon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="../style.css">
 <style>
   .tnav{display:flex;align-items:center;gap:16px;padding:12px 22px;border-bottom:1px solid var(--outline);
     background:rgba(12,14,20,.7);backdrop-filter:blur(14px);position:sticky;top:0;z-index:50;}
-  .stats{display:flex;gap:14px;margin-left:auto;align-items:center;flex-wrap:wrap;}
+  .stats{display:flex;gap:10px;margin-left:auto;align-items:center;flex-wrap:wrap;}
   .pill{display:flex;align-items:center;gap:7px;background:var(--surface-2);border:1px solid var(--outline);
     border-radius:999px;padding:6px 14px;font-weight:700;font-size:14px;}
   .bar{height:10px;border-radius:999px;background:var(--surface-2);overflow:hidden;border:1px solid var(--outline);}
   .bar>i{display:block;height:100%;background:var(--grad2);width:0;transition:width .4s;}
   .panel{max-width:880px;margin:24px auto;padding:0 22px;}
+  /* Stufen-Auswahl */
+  .stufen{display:grid;gap:18px;}
+  .stufe{position:relative;display:flex;gap:18px;align-items:center;padding:22px;border-radius:var(--r);
+    background:var(--glass);border:1px solid var(--outline);box-shadow:var(--e1);cursor:pointer;
+    transition:transform .14s,box-shadow .14s,border-color .14s;backdrop-filter:blur(8px);}
+  .stufe:hover{transform:translateY(-3px);box-shadow:var(--e2);border-color:var(--primary);}
+  .stufe.zu{opacity:.5;filter:grayscale(.4);cursor:not-allowed;}
+  .stufe .nr{width:60px;height:60px;border-radius:18px;display:grid;place-items:center;font-size:30px;
+    background:var(--grad);box-shadow:var(--e1);flex:0 0 auto;}
+  .stufe.s2 .nr{background:linear-gradient(135deg,#16a34a,#5eead4);}
+  .stufe.s3 .nr{background:linear-gradient(135deg,#9b8cff,#f472b6);}
+  .stufe h3{margin:0 0 3px;font-size:20px;} .stufe p{margin:0;color:var(--muted);font-size:14px;}
+  .stufe .mini-bar{height:7px;border-radius:999px;background:var(--surface-2);margin-top:9px;overflow:hidden;max-width:240px;}
+  .stufe .mini-bar>i{display:block;height:100%;background:var(--grad2);}
+  .stufe .haken{position:absolute;top:14px;right:16px;color:var(--green);font-weight:800;}
+  .schloss{position:absolute;top:14px;right:16px;opacity:.7;}
+  /* Lektion */
   .aufgabe{background:var(--glass);border:1px solid var(--outline);border-radius:var(--r);padding:22px 24px;
     box-shadow:var(--e2);backdrop-filter:blur(8px);}
   .aufgabe .kap{font-size:12px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--violet);}
-  .aufgabe h2{font-size:23px;margin:8px 0 6px;}
+  .aufgabe h2{font-size:22px;margin:8px 0 6px;}
   .hint{margin-top:12px;padding:12px 14px;border-radius:12px;background:#1a2236;border:1px dashed #3a4a6e;
     color:#cdd9f2;font-size:14px;display:none;}
   .hint code,.aufgabe code{background:#0b0f17;padding:2px 7px;border-radius:6px;color:var(--termgreen);font-family:ui-monospace,monospace;}
   .konsole{margin-top:16px;background:#0a0e16;border:1px solid #232b3a;border-radius:14px;box-shadow:var(--e2);overflow:hidden;}
   .konsole .bar2{display:flex;align-items:center;gap:8px;height:34px;padding:0 13px;background:linear-gradient(180deg,#1b2230,#141a26);border-bottom:1px solid #232b3a;}
-  .scroll{padding:14px 16px;max-height:300px;overflow:auto;font-family:ui-monospace,monospace;font-size:13.5px;line-height:1.55;color:#d7e3f4;white-space:pre-wrap;}
+  .scroll{padding:14px 16px;max-height:280px;overflow:auto;font-family:ui-monospace,monospace;font-size:13.5px;line-height:1.55;color:#d7e3f4;white-space:pre-wrap;}
   .scroll .pr{color:var(--primary);} .scroll .cmd{color:#fff;} .scroll .dir{color:var(--cyan);}
   .scroll .ok{color:var(--termgreen);} .scroll .err{color:#ff8585;} .scroll .mut{color:var(--muted);}
   .eingabe{display:flex;align-items:center;gap:8px;padding:11px 16px;border-top:1px solid #232b3a;background:#0b1019;font-family:ui-monospace,monospace;}
@@ -35,277 +55,278 @@
   .erfolg.an{display:flex;}
   .konfetti{position:fixed;top:-20px;font-size:22px;pointer-events:none;z-index:99;animation:fall linear forwards;}
   @keyframes fall{to{transform:translateY(105vh) rotate(540deg);opacity:.9;}}
-  .ende{text-align:center;}
-  .ende .pokal{font-size:70px;}
+  .ende{text-align:center;} .ende .pokal{font-size:70px;}
 </style>
 </head>
 <body>
 
 <div class="tnav">
   <a class="logo" href="../" style="text-decoration:none;color:var(--text);font-weight:800;">🐢 Terminal-Schule</a>
-  <span class="badge">Shell-Trainer</span>
+  <span class="badge" id="ortBadge">Stufen</span>
   <div class="stats">
     <span class="pill">⭐ <span id="xp">0</span> XP</span>
     <span class="pill">🔥 <span id="streak">0</span></span>
-    <span class="pill">📦 <span id="fortschritt">0/0</span></span>
   </div>
 </div>
 
-<div class="panel">
-  <div class="bar" style="margin-bottom:18px;"><i id="balken"></i></div>
-  <div id="inhalt"></div>
-</div>
+<div class="panel"><div id="inhalt"></div></div>
 
 <script>
-/* ---------------- simuliertes Dateisystem ---------------- */
-const HOME = ["home","roboter"];
-const frischesFS = () => ({home:{t:"d",c:{roboter:{t:"d",c:{
+/* ============ simuliertes Dateisystem ============ */
+const HOME=["home","roboter"];
+const frischesFS=()=>({home:{t:"d",c:{roboter:{t:"d",c:{
   roboterarm:{t:"d",c:{
-    service:{t:"d",c:{"robot_service.py":{t:"f",c:"# der Roboter-Webserver"}}},
-    web:{t:"d",c:{}},
-    deploy:{t:"d",c:{"hotspot.sh":{t:"f",c:"#!/usr/bin/env bash"}}},
-    "README.md":{t:"f",c:"# roboterarm\nDein Roboterarm zum Selberbauen!"},
+    service:{t:"d",c:{"robot_service.py":{t:"f",c:"# der Roboter-Webserver\nport = 8765"}}},
+    web:{t:"d",c:{}}, deploy:{t:"d",c:{"hotspot.sh":{t:"f",c:"#!/usr/bin/env bash"}}},
+    ".git":{t:"d",c:{}}, "README.md":{t:"f",c:"# roboterarm\nDein Roboterarm zum Selberbauen!"},
     "install.sh":{t:"f",c:"#!/usr/bin/env bash"}
   }},
-  bilder:{t:"d",c:{"arm.png":{t:"f",c:"(ein Bild)"},"katze.jpg":{t:"f",c:"(miau)"}}},
-  "notizen.txt":{t:"f",c:"Hallo Roboter! Heute lerne ich das Terminal."}
+  bilder:{t:"d",c:{"arm.png":{t:"f",c:"(bild)"},"katze.jpg":{t:"f",c:"(miau)"},"arm2.png":{t:"f",c:"(bild)"}}},
+  ".geheim":{t:"f",c:"Das Passwort ist: roboter123"},
+  "notizen.txt":{t:"f",c:"Hallo Roboter!\nHeute lerne ich das Terminal.\nMorgen programmiere ich den Arm."}
 }}}}});
-let FS, cwd;
-function reset(){ FS = frischesFS(); cwd = HOME.slice(); }
-function knoten(arr){ let n={t:"d",c:FS}; for(const s of arr){ if(!n.c||!n.c[s]) return null; n=n.c[s]; } return n; }
-function elternC(arr){ const p=arr.slice(0,-1); const n=knoten(p); return n&&n.t==="d"?n.c:null; }
+let FS,cwd;
+function reset(){FS=frischesFS();cwd=HOME.slice();}
+function knoten(arr){let n={t:"d",c:FS};for(const s of arr){if(!n.c||!n.c[s])return null;n=n.c[s];}return n;}
+function elternC(arr){const n=knoten(arr.slice(0,-1));return n&&n.t==="d"?n.c:null;}
 function aufloesen(arg){
   let segs;
-  if(arg==="~"||arg===undefined) return HOME.slice();
-  if(arg.startsWith("/")) segs=arg.split("/").filter(Boolean);
-  else if(arg.startsWith("~/")) segs=HOME.concat(arg.slice(2).split("/").filter(Boolean));
+  if(arg==="~"||arg===undefined)return HOME.slice();
+  if(arg.startsWith("/"))segs=arg.split("/").filter(Boolean);
+  else if(arg.startsWith("~/"))segs=HOME.concat(arg.slice(2).split("/").filter(Boolean));
   else segs=cwd.concat(arg.split("/").filter(Boolean));
-  const out=[]; for(const s of segs){ if(s===".")continue; if(s===".."){out.pop();} else out.push(s); }
+  const out=[];for(const s of segs){if(s===".")continue;if(s===".."){out.pop();}else out.push(s);}
   return out;
 }
 function pfadStr(arr){
-  if(arr.length>=2&&arr[0]==="home"&&arr[1]==="roboter"){
-    const rest=arr.slice(2); return rest.length?"~/"+rest.join("/"):"~";
-  }
+  if(arr.length>=2&&arr[0]==="home"&&arr[1]==="roboter"){const r=arr.slice(2);return r.length?"~/"+r.join("/"):"~";}
   return "/"+arr.join("/");
 }
-const esc = s => String(s).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+const esc=s=>String(s).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
 
-/* ---------------- Befehle ---------------- */
+/* ============ Befehls-Engine (Plaintext + HTML) ============ */
+function listePlain(arr,zeigeVersteckt){
+  const n=knoten(arr); if(!n)return null; if(n.t==="f")return [arr[arr.length-1]];
+  let k=Object.keys(n.c); if(!zeigeVersteckt)k=k.filter(x=>!x.startsWith("."));
+  return k.map(x=>n.c[x].t==="d"?x+"/":x);
+}
+function runPlain(tok){
+  const name=tok[0],args=tok.slice(1);
+  if(name==="ls"){const a=args.find(x=>!x.startsWith("-"));const l=listePlain(a?aufloesen(a):cwd,args.some(f=>f.includes("a")));return l||[];}
+  if(name==="cat"){const n=knoten(aufloesen(args[0]||""));return n&&n.t==="f"?String(n.c).split("\n"):[];}
+  if(name==="echo")return [args.join(" ")];
+  return [];
+}
 function fuehreAus(zeile){
-  const t = zeile.trim().match(/"[^"]*"|\S+/g) || [];
-  const name = t[0], args = t.slice(1).map(a=>a.replace(/^"|"$/g,""));
-  const o = [];
-  const fehler = m => o.push(`<span class="err">${esc(m)}</span>`);
-  if(!name) return {o, name:"", args};
-  switch(name){
-    case "pwd": o.push(pfadStr(cwd)); break;
-    case "ls": {
-      const ziel = args.find(a=>!a.startsWith("-"));
-      const n = knoten(ziel?aufloesen(ziel):cwd);
-      if(!n) fehler(`ls: ${ziel}: nicht gefunden`);
-      else if(n.t==="f") o.push(esc(ziel));
-      else { const k=Object.keys(n.c); o.push(k.length?k.map(x=>n.c[x].t==="d"?`<span class="dir">${esc(x)}/</span>`:esc(x)).join("  "):'<span class="mut">(leer)</span>'); }
-      break;
+  const roh=zeile.trim();
+  // Pipe: linke Ausgabe in grep filtern
+  if(roh.includes("|")){
+    const teile=roh.split("|").map(s=>s.trim());
+    let zeilen=runPlain(teile[0].match(/"[^"]*"|\S+/g)||[]);
+    for(let i=1;i<teile.length;i++){
+      const t=teile[i].match(/"[^"]*"|\S+/g)||[];
+      if(t[0]==="grep"&&t[1]){const w=t[1].replace(/"/g,"").toLowerCase();zeilen=zeilen.filter(z=>z.toLowerCase().includes(w));}
+      else return {o:[`<span class="err">unbekannt nach | : ${esc(t[0]||"")}</span>`],name:"pipe",args:[],raw:roh};
     }
-    case "cd": {
-      const arr = aufloesen(args[0]); const n = knoten(arr);
-      if(!n) fehler(`cd: ${args[0]}: nicht gefunden`);
-      else if(n.t!=="d") fehler(`cd: ${args[0]}: kein Ordner`);
-      else cwd = arr;
-      break;
-    }
-    case "cat": {
-      if(!args[0]){ fehler("cat: welche Datei?"); break; }
-      const n = knoten(aufloesen(args[0]));
-      if(!n) fehler(`cat: ${args[0]}: nicht gefunden`);
-      else if(n.t!=="f") fehler(`cat: ${args[0]}: ist ein Ordner`);
-      else o.push(esc(n.c));
-      break;
-    }
-    case "mkdir": {
-      if(!args[0]){ fehler("mkdir: welcher Name?"); break; }
-      const c = knoten(cwd).c; if(c[args[0]]) fehler(`mkdir: ${args[0]}: gibt es schon`);
-      else c[args[0]]={t:"d",c:{}};
-      break;
-    }
-    case "touch": {
-      if(!args[0]){ fehler("touch: welcher Name?"); break; }
-      knoten(cwd).c[args[0]] ??= {t:"f",c:""};
-      break;
-    }
-    case "rm": {
-      const ziel = args.find(a=>!a.startsWith("-"));
-      if(!ziel){ fehler("rm: was löschen?"); break; }
-      const arr=aufloesen(ziel), c=elternC(arr), nm=arr[arr.length-1];
-      if(!c||!c[nm]) fehler(`rm: ${ziel}: nicht gefunden`);
-      else if(c[nm].t==="d"&&!args.includes("-r")) fehler(`rm: ${ziel}: ist ein Ordner (nutze rm -r)`);
-      else delete c[nm];
-      break;
-    }
-    case "echo": {
-      const i = args.indexOf(">");
-      if(i>=0&&args[i+1]){ knoten(cwd).c[args[i+1]]={t:"f",c:args.slice(0,i).join(" ")}; }
-      else o.push(esc(args.join(" ")));
-      break;
-    }
-    case "clear": return {o:[], name, args, clear:true};
-    case "help":
-      o.push('Befehle: <span class="cmd">pwd ls cd cat mkdir touch rm echo clear</span>');
-      o.push('Roboter: <span class="cmd">git pull · ./install.sh · python3 service/robot_service.py</span>');
-      break;
-    case "git":
-      if(args[0]==="pull"){ pfadStr(cwd).includes("roboterarm") ? o.push('<span class="ok">Bereits aktuell.</span>') : fehler("git: hier ist kein Projekt (geh in roboterarm)"); }
-      else fehler(`git: '${args[0]||""}' kenne ich hier nicht`);
-      break;
-    case "./install.sh":
-      if(knoten(cwd).c&&knoten(cwd).c["install.sh"]){
-        o.push('<span class="mut">Pakete werden installiert …</span>');
-        o.push('<span class="mut">Servos werden eingerichtet …</span>');
-        o.push('<span class="ok">✓ Fertig! Du kannst jetzt den Server starten.</span>');
-      } else fehler("./install.sh: nicht gefunden (geh in roboterarm)");
-      break;
-    case "python3":
-      if((args[0]||"").endsWith("robot_service.py"))
-        o.push('<span class="ok">✓ Server läuft: http://10.42.0.1:8765</span>');
-      else fehler(`python3: ${args[0]||""}: nicht gefunden`);
-      break;
-    case "sudo":
-      if(args.join(" ").includes("restart roboterarm")) o.push('<span class="ok">✓ Dienst neu gestartet.</span>');
-      else fehler("sudo: das brauchst du hier nicht");
-      break;
-    default: fehler(`${name}: Befehl nicht gefunden. Tippe help`);
+    return {o:zeilen.length?zeilen.map(esc):['<span class="mut">(nichts gefunden)</span>'],name:"pipe",args:[],raw:roh};
   }
-  return {o, name, args};
+  const t=roh.match(/"[^"]*"|\S+/g)||[];
+  const name=t[0],args=t.slice(1).map(a=>a.replace(/^"|"$/g,""));
+  const o=[],raw=roh; const fehler=m=>o.push(`<span class="err">${esc(m)}</span>`);
+  if(!name)return{o,name:"",args,raw};
+  switch(name){
+    case "pwd":o.push(pfadStr(cwd));break;
+    case "ls":{
+      const ziel=args.find(a=>!a.startsWith("-")),flags=args.filter(a=>a.startsWith("-")).join(""),lang=flags.includes("l");
+      const n=knoten(ziel?aufloesen(ziel):cwd);
+      if(!n)fehler(`ls: ${ziel}: nicht gefunden`);
+      else if(n.t==="f")o.push(esc(ziel));
+      else{let k=Object.keys(n.c);if(!flags.includes("a"))k=k.filter(x=>!x.startsWith("."));
+        if(!k.length){o.push('<span class="mut">(leer)</span>');break;}
+        if(lang)k.forEach(x=>o.push(`${n.c[x].t==="d"?"drwxr-xr-x":"-rw-r--r--"}  ${n.c[x].t==="d"?`<span class="dir">${esc(x)}/</span>`:esc(x)}`));
+        else o.push(k.map(x=>n.c[x].t==="d"?`<span class="dir">${esc(x)}/</span>`:esc(x)).join("  "));}
+      break;}
+    case "cd":{const arr=aufloesen(args[0]);const n=knoten(arr);
+      if(!n)fehler(`cd: ${args[0]}: nicht gefunden`);else if(n.t!=="d")fehler(`cd: ${args[0]}: kein Ordner`);else cwd=arr;break;}
+    case "cat":{if(!args[0]){fehler("cat: welche Datei?");break;}const n=knoten(aufloesen(args[0]));
+      if(!n)fehler(`cat: ${args[0]}: nicht gefunden`);else if(n.t!=="f")fehler(`cat: ${args[0]}: ist ein Ordner`);else o.push(esc(n.c));break;}
+    case "grep":{const w=(args[0]||"").toLowerCase(),f=args[1];if(!w||!f){fehler("grep: nutze  grep wort datei");break;}
+      const n=knoten(aufloesen(f));if(!n||n.t!=="f"){fehler(`grep: ${f}: keine Datei`);break;}
+      const tr=String(n.c).split("\n").filter(z=>z.toLowerCase().includes(w));o.push(tr.length?tr.map(esc).join("\n"):'<span class="mut">(nichts gefunden)</span>');break;}
+    case "mkdir":{if(!args[0]){fehler("mkdir: welcher Name?");break;}const c=knoten(cwd).c;c[args[0]]?fehler(`mkdir: ${args[0]}: gibt es schon`):c[args[0]]={t:"d",c:{}};break;}
+    case "touch":{if(!args[0]){fehler("touch: welcher Name?");break;}knoten(cwd).c[args[0]]??={t:"f",c:""};break;}
+    case "cp":{const[a,b]=args;const c=knoten(cwd).c;if(!a||!b){fehler("cp: nutze  cp quelle ziel");break;}
+      if(!c[a]){fehler(`cp: ${a}: nicht gefunden`);break;}
+      if(c[b]&&c[b].t==="d")c[b].c[a]=JSON.parse(JSON.stringify(c[a]));else c[b]=JSON.parse(JSON.stringify(c[a]));break;}
+    case "mv":{const[a,b]=args;const c=knoten(cwd).c;if(!a||!b){fehler("mv: nutze  mv quelle ziel");break;}
+      if(!c[a]){fehler(`mv: ${a}: nicht gefunden`);break;}
+      if(c[b]&&c[b].t==="d"){c[b].c[a]=c[a];}else{c[b]=c[a];}delete c[a];break;}
+    case "rm":{const ziel=args.find(a=>!a.startsWith("-"));if(!ziel){fehler("rm: was löschen?");break;}
+      const arr=aufloesen(ziel),c=elternC(arr),nm=arr[arr.length-1];
+      if(!c||!c[nm])fehler(`rm: ${ziel}: nicht gefunden`);
+      else if(c[nm].t==="d"&&!args.includes("-r"))fehler(`rm: ${ziel}: ist ein Ordner (nutze rm -r)`);else delete c[nm];break;}
+    case "echo":{const i=args.indexOf(">");if(i>=0&&args[i+1])knoten(cwd).c[args[i+1]]={t:"f",c:args.slice(0,i).join(" ")};else o.push(esc(args.join(" ")));break;}
+    case "chmod":o.push(args.includes("+x")?'<span class="ok">✓ Datei ist jetzt ausführbar</span>':"");break;
+    case "clear":return{o:[],name,args,raw,clear:true};
+    case "help":o.push('Befehle: <span class="cmd">pwd ls cd cat grep mkdir touch cp mv rm echo clear</span>');o.push('Pipes: <span class="cmd">ls | grep wort</span>  ·  Roboter: <span class="cmd">git pull · ./install.sh · python3 …</span>');break;
+    case "git":args[0]==="pull"?(pfadStr(cwd).includes("roboterarm")?o.push('<span class="ok">Bereits aktuell.</span>'):fehler("git: hier ist kein Projekt")):fehler(`git: '${args[0]||""}' unbekannt`);break;
+    case "./install.sh":knoten(cwd).c&&knoten(cwd).c["install.sh"]?(o.push('<span class="mut">Pakete …</span>'),o.push('<span class="ok">✓ Fertig!</span>')):fehler("./install.sh: nicht gefunden (geh in roboterarm)");break;
+    case "python3":(args[0]||"").endsWith("robot_service.py")?o.push('<span class="ok">✓ Server läuft: http://10.42.0.1:8765</span>'):fehler(`python3: ${args[0]||""}: nicht gefunden`);break;
+    case "ssh":o.push('<span class="ok">✓ Verbunden mit dem Roboter-Computer!</span>');break;
+    case "sudo":o.push(args.join(" ").includes("restart roboterarm")?'<span class="ok">✓ Dienst neu gestartet.</span>':'<span class="err">sudo: das brauchst du hier nicht</span>');break;
+    default:fehler(`${name}: Befehl nicht gefunden. Tippe help`);
+  }
+  return{o,name,args,raw};
 }
 
-/* ---------------- Lektionen ---------------- */
-const L = [
-  {kap:"Orientierung", text:"Finde heraus, <b>wo</b> du gerade bist.", hint:"Der Befehl heißt <code>pwd</code> (print working directory).", loesung:"pwd", ok:c=>c.name==="pwd"},
-  {kap:"Orientierung", text:"Lass dir anzeigen, <b>was</b> hier alles liegt.", hint:"<code>ls</code> = list (auflisten).", loesung:"ls", ok:c=>c.name==="ls"},
-  {kap:"Bewegen", text:"Geh in den Ordner <code>roboterarm</code> hinein.", hint:"<code>cd ordnername</code> = change directory.", loesung:"cd roboterarm", ok:c=>c.cwd==="~/roboterarm"},
-  {kap:"Bewegen", text:"Schau nach, was im Roboter-Projekt steckt.", hint:"Wieder <code>ls</code> — aber jetzt bist du woanders.", loesung:"ls", ok:c=>c.name==="ls"&&c.cwd==="~/roboterarm"},
-  {kap:"Bewegen", text:"Geh noch tiefer — in den Ordner <code>service</code>.", hint:"<code>cd service</code>", loesung:"cd service", ok:c=>c.cwd.endsWith("/service")},
-  {kap:"Bewegen", text:"Geh einen Ordner <b>zurück</b>.", hint:"Zwei Punkte bedeuten: einen hoch. <code>cd ..</code>", loesung:"cd ..", ok:c=>c.cwd==="~/roboterarm"},
-  {kap:"Bewegen", text:"Geh ganz zurück <b>nach Hause</b> (dein Start-Ordner).", hint:"<code>cd</code> ohne alles, oder <code>cd ~</code>", loesung:"cd", ok:c=>c.cwd==="~"},
-  {kap:"Lesen", text:"Lies die Datei <code>notizen.txt</code> vor.", hint:"<code>cat dateiname</code> zeigt den Inhalt.", loesung:"cat notizen.txt", ok:c=>c.name==="cat"&&c.args[0]==="notizen.txt"},
-  {kap:"Erschaffen", text:"Erstelle einen neuen Ordner namens <code>meine_posen</code>.", hint:"<code>mkdir meine_posen</code>", loesung:"mkdir meine_posen", ok:c=>!!(knoten(cwd).c&&knoten(cwd).c["meine_posen"])},
-  {kap:"Erschaffen", text:"Erstelle eine leere Datei <code>idee.txt</code>.", hint:"<code>touch idee.txt</code>", loesung:"touch idee.txt", ok:c=>!!(knoten(cwd).c&&knoten(cwd).c["idee.txt"])},
-  {kap:"Aufräumen", text:"Lösche die Datei <code>idee.txt</code> wieder.", hint:"<code>rm idee.txt</code> (rm = remove).", loesung:"rm idee.txt", ok:c=>!(knoten(cwd).c&&knoten(cwd).c["idee.txt"])},
-  {kap:"Aufräumen", text:"Mach den Bildschirm <b>sauber</b>.", hint:"<code>clear</code>", loesung:"clear", ok:c=>c.name==="clear"},
-  {kap:"Roboter steuern", text:"Geh ins Projekt <code>roboterarm</code>.", hint:"<code>cd roboterarm</code> (von zu Hause aus).", loesung:"cd roboterarm", ok:c=>c.cwd==="~/roboterarm"},
-  {kap:"Roboter steuern", text:"Hol die neueste Version mit <b>git</b>.", hint:"<code>git pull</code>", loesung:"git pull", ok:c=>c.name==="git"&&c.args[0]==="pull"},
-  {kap:"Roboter steuern", text:"Installiere alles mit dem install-Skript.", hint:"<code>./install.sh</code> — der Punkt-Schrägstrich startet ein Skript hier.", loesung:"./install.sh", ok:c=>c.name==="./install.sh"},
-  {kap:"Roboter steuern", text:"<b>Starte den Roboter-Server!</b> 🚀", hint:"<code>python3 service/robot_service.py</code>", loesung:"python3 service/robot_service.py", ok:c=>c.name==="python3"&&(c.args[0]||"").endsWith("robot_service.py")},
+/* ============ Lektionen, 3 Stufen ============ */
+const STUFEN=[
+  {id:1,name:"Grundlagen",emoji:"🐣",unter:"Orientieren, bewegen, lesen",lekt:[
+    {kap:"Orientierung",text:"Finde heraus, <b>wo</b> du bist.",hint:"<code>pwd</code> (print working directory).",loesung:"pwd",ok:c=>c.name==="pwd"},
+    {kap:"Orientierung",text:"Zeig an, <b>was</b> hier liegt.",hint:"<code>ls</code> = list.",loesung:"ls",ok:c=>c.name==="ls"},
+    {kap:"Bewegen",text:"Geh in den Ordner <code>roboterarm</code>.",hint:"<code>cd ordner</code>.",loesung:"cd roboterarm",ok:c=>c.cwd==="~/roboterarm"},
+    {kap:"Bewegen",text:"Schau, was im Projekt steckt.",hint:"<code>ls</code> — jetzt bist du woanders.",loesung:"ls",ok:c=>c.name==="ls"&&c.cwd==="~/roboterarm"},
+    {kap:"Bewegen",text:"Geh tiefer in <code>service</code>.",hint:"<code>cd service</code>.",loesung:"cd service",ok:c=>c.cwd.endsWith("/service")},
+    {kap:"Bewegen",text:"Geh einen Ordner <b>zurück</b>.",hint:"Zwei Punkte = einen hoch: <code>cd ..</code>.",loesung:"cd ..",ok:c=>c.cwd==="~/roboterarm"},
+    {kap:"Bewegen",text:"Geh <b>nach Hause</b>.",hint:"<code>cd</code> oder <code>cd ~</code>.",loesung:"cd",ok:c=>c.cwd==="~"},
+    {kap:"Lesen",text:"Lies <code>notizen.txt</code> vor.",hint:"<code>cat datei</code>.",loesung:"cat notizen.txt",ok:c=>c.name==="cat"&&c.args[0]==="notizen.txt"},
+    {kap:"Erschaffen",text:"Erstelle den Ordner <code>meine_posen</code>.",hint:"<code>mkdir meine_posen</code>.",loesung:"mkdir meine_posen",ok:c=>!!(knoten(cwd).c&&knoten(cwd).c["meine_posen"])},
+    {kap:"Aufräumen",text:"Mach den Bildschirm <b>sauber</b>.",hint:"<code>clear</code>.",loesung:"clear",ok:c=>c.name==="clear"},
+  ]},
+  {id:2,name:"Fortgeschritten",emoji:"⚡",unter:"Flags, kopieren, suchen, Pipes",lekt:[
+    {kap:"Geheimnisse",text:"Zeig <b>alle</b> Dateien — auch versteckte (die mit Punkt).",hint:"<code>ls -a</code> zeigt versteckte Dateien.",loesung:"ls -a",ok:c=>c.name==="ls"&&c.args.join("").includes("a")},
+    {kap:"Details",text:"Zeig die Dateien mit <b>Details</b> (Rechte, lange Liste).",hint:"<code>ls -l</code>.",loesung:"ls -l",ok:c=>c.name==="ls"&&c.args.join("").includes("l")},
+    {kap:"Lesen",text:"Lies die versteckte Datei <code>.geheim</code>.",hint:"<code>cat .geheim</code>.",loesung:"cat .geheim",ok:c=>c.name==="cat"&&c.args[0]===".geheim"},
+    {kap:"Kopieren",text:"Kopiere <code>notizen.txt</code> nach <code>backup.txt</code>.",hint:"<code>cp quelle ziel</code>.",loesung:"cp notizen.txt backup.txt",ok:c=>!!(knoten(cwd).c&&knoten(cwd).c["backup.txt"])},
+    {kap:"Umbenennen",text:"Benenne <code>backup.txt</code> um in <code>sicherung.txt</code>.",hint:"<code>mv alt neu</code> verschiebt/benennt um.",loesung:"mv backup.txt sicherung.txt",ok:c=>!!(knoten(cwd).c&&knoten(cwd).c["sicherung.txt"])&&!(knoten(cwd).c["backup.txt"])},
+    {kap:"Suchen",text:"Finde in <code>notizen.txt</code> die Zeile mit dem Wort <code>Arm</code>.",hint:"<code>grep wort datei</code>.",loesung:"grep Arm notizen.txt",ok:c=>c.name==="grep"&&(c.args[0]||"").toLowerCase()==="arm"},
+    {kap:"Pipes",text:"Zeig nur die Dinge im Ordner, die <code>roboter</code> enthalten — mit einer <b>Pipe</b>.",hint:"<code>ls | grep roboter</code> — die <code>|</code> leitet ls in grep.",loesung:"ls | grep roboter",ok:c=>c.raw.includes("|")&&c.raw.includes("grep")},
+    {kap:"Schreiben",text:"Schreibe <code>Hallo</code> in eine neue Datei <code>gruss.txt</code>.",hint:'<code>echo Hallo &gt; gruss.txt</code> — der Pfeil leitet die Ausgabe in eine Datei.',loesung:"echo Hallo > gruss.txt",ok:c=>!!(knoten(cwd).c&&knoten(cwd).c["gruss.txt"])},
+  ]},
+  {id:3,name:"Profi & Roboter",emoji:"🤖",unter:"Den echten Roboter steuern",lekt:[
+    {kap:"Verbinden",text:"Verbinde dich mit dem Roboter-Computer.",hint:"<code>ssh radxa@roboterarm-01.local</code>.",loesung:"ssh radxa@roboterarm-01.local",ok:c=>c.name==="ssh"},
+    {kap:"Navigieren",text:"Geh ins Projekt <code>roboterarm</code>.",hint:"<code>cd roboterarm</code>.",loesung:"cd roboterarm",ok:c=>c.cwd==="~/roboterarm"},
+    {kap:"Updaten",text:"Hol die neueste Version mit git.",hint:"<code>git pull</code>.",loesung:"git pull",ok:c=>c.name==="git"&&c.args[0]==="pull"},
+    {kap:"Rechte",text:"Mach das Skript <code>install.sh</code> ausführbar.",hint:"<code>chmod +x install.sh</code>.",loesung:"chmod +x install.sh",ok:c=>c.name==="chmod"&&c.args.includes("+x")},
+    {kap:"Installieren",text:"Starte das Installations-Skript.",hint:"<code>./install.sh</code>.",loesung:"./install.sh",ok:c=>c.name==="./install.sh"},
+    {kap:"Suchen",text:"Finde im Server-Code die Zeile mit <code>port</code>.",hint:"<code>grep port service/robot_service.py</code>.",loesung:"grep port service/robot_service.py",ok:c=>c.name==="grep"&&(c.args[0]||"").toLowerCase()==="port"},
+    {kap:"Starten",text:"<b>Starte den Roboter-Server!</b> 🚀",hint:"<code>python3 service/robot_service.py</code>.",loesung:"python3 service/robot_service.py",ok:c=>c.name==="python3"&&(c.args[0]||"").endsWith("robot_service.py")},
+  ]},
 ];
 
-/* ---------------- Zustand & Rendern ---------------- */
-let idx=0, xp=0, streak=0, tippBenutzt=false, verlauf=[];
-function laden(){ try{ const s=JSON.parse(localStorage.getItem("shelltrainer")||"{}"); idx=s.idx||0; xp=s.xp||0; streak=s.streak||0; }catch(e){} }
-function speichern(){ localStorage.setItem("shelltrainer", JSON.stringify({idx,xp,streak})); }
+/* ============ Zustand ============ */
+let S={xp:0,stufen:{}};   // stufen[id]={idx,fertig}
+let aktiv=null, lidx=0, streak=0, tippBenutzt=false, verlauf=[];
+function laden(){try{S=Object.assign({xp:0,stufen:{}},JSON.parse(localStorage.getItem("shelltrainer2")||"{}"));}catch(e){}}
+function speichern(){localStorage.setItem("shelltrainer2",JSON.stringify(S));}
+function stufeOffen(i){return i===0||(S.stufen[STUFEN[i-1].id]&&S.stufen[STUFEN[i-1].id].fertig);}
 
+/* ============ Stufen-Auswahl ============ */
+function zeigeStufen(){
+  aktiv=null; document.getElementById("ortBadge").textContent="Stufen";
+  document.getElementById("xp").textContent=S.xp; document.getElementById("streak").textContent=streak;
+  document.getElementById("inhalt").innerHTML=`
+    <h2 style="font-size:28px;margin:6px 0 4px;">Wähle deine Stufe</h2>
+    <p class="lead" style="margin-bottom:22px;">Drei Stufen vom Küken zum Roboter-Profi. Jede schaltet die nächste frei.</p>
+    <div class="stufen">${STUFEN.map((s,i)=>{
+      const st=S.stufen[s.id]||{idx:0,fertig:false}; const offen=stufeOffen(i);
+      const proz=Math.round((st.idx/s.lekt.length)*100);
+      return `<div class="stufe s${s.id} ${offen?"":"zu"}" ${offen?`onclick="starteStufe(${i})"`:""}>
+        <div class="nr">${offen?s.emoji:"🔒"}</div>
+        <div style="flex:1;">
+          <h3>Stufe ${s.id} · ${s.name}</h3>
+          <p>${s.unter} · ${s.lekt.length} Lektionen</p>
+          ${offen?`<div class="mini-bar"><i style="width:${proz}%"></i></div>`:`<p style="color:var(--muted);margin-top:6px;">🔒 Erst Stufe ${s.id-1} abschließen</p>`}
+        </div>
+        ${st.fertig?'<span class="haken">✓ fertig</span>':""}
+      </div>`;}).join("")}</div>`;
+}
+function starteStufe(i){aktiv=i;reset();lidx=S.stufen[STUFEN[i].id]?.fertig?0:(S.stufen[STUFEN[i].id]?.idx||0);tippBenutzt=false;verlauf=[];render();}
+
+/* ============ Terminal + Lektion ============ */
 function termHTML(){
-  const zeilen = verlauf.map(z=>z).join("\n");
   return `<div class="konsole">
     <div class="bar2"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
-      <span class="titel" style="margin-left:8px;color:var(--muted);font-family:ui-monospace,monospace;font-size:12px;">roboter@arm</span></div>
-    <div class="scroll" id="scroll">${zeilen||'<span class="mut">Tippe hier deinen Befehl ein und drück Enter ↵</span>'}</div>
+      <span style="margin-left:8px;color:var(--muted);font-family:ui-monospace,monospace;font-size:12px;">roboter@arm</span></div>
+    <div class="scroll" id="scroll">${verlauf.join("\n")||'<span class="mut">Tippe deinen Befehl und drück Enter ↵</span>'}</div>
     <div class="eingabe"><span class="pr">roboter@arm</span>:<span class="dir">${esc(pfadStr(cwd))}</span>$
-      <input id="eingabe" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Befehl tippen …"></div>
-  </div>`;
+      <input id="eingabe" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Befehl tippen …"></div></div>`;
 }
+function bindeEingabe(){const inp=document.getElementById("eingabe");if(!inp)return;inp.focus();
+  inp.addEventListener("keydown",e=>{if(e.key==="Enter"){eingeben(inp.value);inp.value="";}});}
 
 function render(){
-  const total=L.length;
-  document.getElementById("xp").textContent=xp;
-  document.getElementById("streak").textContent=streak;
-  document.getElementById("fortschritt").textContent=`${Math.min(idx,total)}/${total}`;
-  document.getElementById("balken").style.width=(idx/total*100)+"%";
-
-  if(idx>=total){ ende(); return; }
-  const l=L[idx];
+  const stufe=STUFEN[aktiv],total=stufe.lekt.length;
+  document.getElementById("ortBadge").textContent=`Stufe ${stufe.id} · ${stufe.name}`;
+  document.getElementById("xp").textContent=S.xp; document.getElementById("streak").textContent=streak;
+  if(lidx>=total){endeStufe();return;}
+  const l=stufe.lekt[lidx];
   document.getElementById("inhalt").innerHTML=`
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+      <button class="btn" onclick="zeigeStufen()">← Stufen</button>
+      <div class="bar" style="flex:1;"><i style="width:${(lidx/total*100)}%"></i></div>
+      <span class="klein" style="color:var(--muted);">${lidx+1}/${total}</span>
+    </div>
     <div class="aufgabe">
-      <div class="kap">Kapitel · ${l.kap}</div>
+      <div class="kap">${stufe.emoji} ${l.kap}</div>
       <h2>${l.text}</h2>
       <div class="hint" id="hint">💡 ${l.hint}</div>
       ${termHTML()}
       <div class="erfolg" id="erfolg"></div>
       <div class="aktionen">
         <button class="btn" onclick="zeigeHint()">💡 Tipp</button>
-        <button class="btn" onclick="zeigeLoesung()">👀 Lösung zeigen</button>
+        <button class="btn" onclick="zeigeLoesung()">👀 Lösung</button>
         <button class="btn primary" id="weiter" style="display:none;margin-left:auto;" onclick="weiter()">Weiter →</button>
       </div>
     </div>`;
-  const inp=document.getElementById("eingabe");
-  inp.focus();
-  inp.addEventListener("keydown",e=>{ if(e.key==="Enter"){ eingeben(inp.value); inp.value=""; } });
+  bindeEingabe();
 }
-
 function eingeben(zeile){
-  if(!zeile.trim()){ return; }
+  if(!zeile.trim())return;
   const r=fuehreAus(zeile);
   verlauf.push(`<span class="pr">roboter@arm</span>:<span class="dir">${esc(pfadStr(cwd))}</span>$ <span class="cmd">${esc(zeile)}</span>`);
-  if(r.clear){ verlauf=[]; }
-  else r.o.forEach(z=>verlauf.push(z));
-  const ctx={name:r.name,args:r.args,cwd:pfadStr(cwd)};
-  const geschafft = L[idx].ok(ctx);
-  // Terminal neu zeichnen, Eingabe-Fokus halten
-  const scrollWrap=document.querySelector(".konsole");
-  scrollWrap.outerHTML=termHTML();
-  const inp=document.getElementById("eingabe");
-  inp.addEventListener("keydown",e=>{ if(e.key==="Enter"){ eingeben(inp.value); inp.value=""; } });
-  const sc=document.getElementById("scroll"); sc.scrollTop=sc.scrollHeight;
-  if(geschafft) erfolg(); else inp.focus();
+  if(r.clear)verlauf=[];else r.o.forEach(z=>verlauf.push(z));
+  const ctx={name:r.name,args:r.args,cwd:pfadStr(cwd),raw:r.raw};
+  const ok=STUFEN[aktiv].lekt[lidx].ok(ctx);
+  document.querySelector(".konsole").outerHTML=termHTML();
+  bindeEingabe();
+  const sc=document.getElementById("scroll");sc.scrollTop=sc.scrollHeight;
+  if(ok)erfolg();
 }
-
 function erfolg(){
-  const punkte = tippBenutzt?6:12;
-  xp+=punkte; streak = tippBenutzt?0:streak+1; speichern();
-  document.getElementById("xp").textContent=xp;
-  document.getElementById("streak").textContent=streak;
-  const e=document.getElementById("erfolg");
-  e.className="erfolg an";
+  const punkte=tippBenutzt?6:12; S.xp+=punkte; streak=tippBenutzt?0:streak+1; speichern();
+  document.getElementById("xp").textContent=S.xp; document.getElementById("streak").textContent=streak;
+  const e=document.getElementById("erfolg"); e.className="erfolg an";
   e.innerHTML=`<span style="font-size:24px;">🎉</span> <b>Richtig!</b> +${punkte} XP${tippBenutzt?"":` · Serie 🔥${streak}`}`;
   document.getElementById("weiter").style.display="inline-flex";
-  document.getElementById("eingabe").disabled=true;
-  const lob=["Stark!","Perfekt!","Profi!","Weiter so!","Genau!"];
-  if(!tippBenutzt&&Math.random()<.6) konfettiSchauer(8);
+  const inp=document.getElementById("eingabe");if(inp)inp.disabled=true;
+  if(!tippBenutzt)konfetti(8);
 }
-
-function weiter(){ idx++; tippBenutzt=false; speichern(); render(); }
-function zeigeHint(){ document.getElementById("hint").style.display="block"; }
-function zeigeLoesung(){
-  tippBenutzt=true; document.getElementById("hint").style.display="block";
-  const inp=document.getElementById("eingabe"); if(inp){ inp.value=L[idx].loesung; inp.focus(); }
-}
-
-function ende(){
-  document.getElementById("balken").style.width="100%";
+function weiter(){lidx++;tippBenutzt=false;const id=STUFEN[aktiv].id;S.stufen[id]=Object.assign(S.stufen[id]||{},{idx:lidx});speichern();render();}
+function zeigeHint(){document.getElementById("hint").style.display="block";}
+function zeigeLoesung(){tippBenutzt=true;document.getElementById("hint").style.display="block";const inp=document.getElementById("eingabe");if(inp){inp.value=STUFEN[aktiv].lekt[lidx].loesung;inp.focus();}}
+function endeStufe(){
+  const s=STUFEN[aktiv];S.stufen[s.id]=Object.assign(S.stufen[s.id]||{},{idx:s.lekt.length,fertig:true});speichern();
+  const letzte=aktiv>=STUFEN.length-1;
   document.getElementById("inhalt").innerHTML=`
     <div class="aufgabe ende">
-      <div class="pokal">🏆</div>
-      <h2>Geschafft — du bist Shell-Profi!</h2>
-      <p class="lead" style="margin:6px auto 18px;">Du hast <b>${xp} XP</b> gesammelt. Jetzt kannst du den
-        echten Roboter-Computer steuern. 🤖</p>
+      <div class="pokal">${letzte?"🏆":"🎉"}</div>
+      <h2>Stufe ${s.id} geschafft!</h2>
+      <p class="lead" style="margin:6px auto 18px;">${letzte?"Du bist <b>Shell-Profi</b> und kannst den echten Roboter steuern. 🤖":`Stufe ${s.id+1} ist jetzt freigeschaltet!`} · <b>${S.xp} XP</b></p>
       <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
-        <a class="btn primary gross" href="../#skript">Zum Roboter-Spickzettel</a>
-        <button class="btn gross" onclick="nochmal()">🔁 Nochmal üben</button>
+        ${letzte?'<a class="btn primary gross" href="../#skript">Zum Roboter-Spickzettel</a>':`<button class="btn primary gross" onclick="starteStufe(${aktiv+1})">Weiter zu Stufe ${s.id+1} →</button>`}
+        <button class="btn gross" onclick="zeigeStufen()">Alle Stufen</button>
       </div>
     </div>`;
-  konfettiSchauer(40);
+  konfetti(40);
 }
-function nochmal(){ idx=0;xp=0;streak=0;tippBenutzt=false;verlauf=[];reset();speichern();render(); }
+function konfetti(n){const emo=["🎉","⭐","🟦","🟪","🟩","✨","🤖"];
+  for(let i=0;i<n;i++){const d=document.createElement("div");d.className="konfetti";d.textContent=emo[i%emo.length];
+    d.style.left=Math.random()*100+"vw";d.style.animationDuration=(2+Math.random()*2)+"s";d.style.animationDelay=(Math.random()*.5)+"s";
+    document.body.appendChild(d);setTimeout(()=>d.remove(),4500);}}
 
-function konfettiSchauer(n){
-  const emo=["🎉","⭐","🟦","🟪","🟩","✨","🤖"];
-  for(let i=0;i<n;i++){ const d=document.createElement("div"); d.className="konfetti";
-    d.textContent=emo[i%emo.length]; d.style.left=Math.random()*100+"vw";
-    d.style.animationDuration=(2+Math.random()*2)+"s"; d.style.animationDelay=(Math.random()*.5)+"s";
-    document.body.appendChild(d); setTimeout(()=>d.remove(),4500); }
-}
-
-reset(); laden(); render();
+if("serviceWorker" in navigator)navigator.serviceWorker.register("../sw.js").catch(()=>{});
+reset();laden();zeigeStufen();
 </script>
 </body>
 </html>
