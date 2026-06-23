@@ -169,33 +169,15 @@
 <section id="skript"><div class="wrap">
   <span class="kapitel reveal"><span class="nr">4</span> Roboterarm-Spickzettel</span>
   <h2 class="titel reveal">Alle Befehle für den Roboter</h2>
-  <div class="grid g2 reveal" style="margin-top:24px;">
-    <div><h3>① Projekt holen &amp; einrichten</h3>
-      <div class="code"><button class="copy">Kopieren</button><span class="c"># Projekt vom Server holen</span>
-git clone https://github.com/ProfessorEngineergit/roboterarm ~/roboterarm
-cd ~/roboterarm
-<span class="c"># Alles installieren</span>
-./install.sh</div></div>
-    <div><h3>② Server starten</h3>
-      <div class="code"><button class="copy">Kopieren</button><span class="c"># Roboter-Webserver starten</span>
-cd ~/roboterarm
-python3 service/robot_service.py
-<span class="p"># Browser: http://10.42.0.1:8765</span></div></div>
-    <div><h3>③ Neueste Version laden</h3>
-      <div class="code"><button class="copy">Kopieren</button>cd ~/roboterarm
-git pull
-sudo systemctl restart roboterarm</div></div>
-    <div><h3>④ Kalibrieren</h3>
-      <div class="code"><button class="copy">Kopieren</button><span class="c"># oder im Web-Tab ⚙ Kalibrieren</span>
-cd ~/roboterarm
-python3 calibrate.py</div></div>
-  </div>
+  <p class="lead reveal">Jeder Befehl einzeln — links zum Kopieren, rechts die Erklärung. Tipp sie der Reihe nach.</p>
+  <div class="cmd-liste reveal" id="cmd-liste"></div>
 </div></section>
 
 <footer class="foot"><div class="wrap">
   <div class="grid g2" style="align-items:center;">
     <div>📲 <b>Tipp:</b> Diese Seite lässt sich <b>installieren</b> (Browser-Menü → „Zum Startbildschirm/Installieren") und
-      funktioniert dann <b>komplett offline</b>.</div>
+      funktioniert dann <b>komplett offline</b>.<br>
+      📄 Für Betreuer:innen: <a href="loesungen.pdf" target="_blank" rel="noopener">Alle Lösungen (PDF)</a></div>
     <div style="text-align:right;">
       <span class="badge">Terminal-Schule · Roboterarm-Workshop</span><br>
       <span style="font-size:12px;">Offline-fähig (PWA) · am Board unter <code>/lernen/</code></span>
@@ -229,6 +211,29 @@ const BEFEHLE=[
 document.getElementById("befehle-grid").innerHTML=BEFEHLE.map(([i,c,t,m])=>`
   <div class="cmd-karte"><div class="ikon" style="font-size:22px;">${i}</div>
     <code>${c}</code><p>${t}</p><div class="mini">${m.replace(/\n/g,"<br>")}</div></div>`).join("");
+
+/* Roboter-Spickzettel: ein Befehl je Zeile + Erklärung daneben */
+const CMDS=[
+  ["git clone https://github.com/ProfessorEngineergit/roboterarm ~/roboterarm",
+   "<b>Einmalig:</b> Lädt das komplette Roboterarm-Projekt aus dem Internet (GitHub) herunter und legt es im Ordner <code>~/roboterarm</code> an."],
+  ["cd ~/roboterarm",
+   "<b>Reingehen:</b> Wechselt in den Projektordner. Alle folgenden Befehle wirken dann genau hier."],
+  ["./install.sh",
+   "<b>Installieren:</b> Richtet alle nötigen Programme und die Servo-Motoren ein. Dauert ein paar Minuten — nur einmal nötig."],
+  ["python3 service/robot_service.py",
+   "<b>Starten:</b> Startet den Webserver des Roboters. Danach im Browser <code>http://10.42.0.1:8765</code> öffnen und losspielen."],
+  ["git pull",
+   "<b>Updaten:</b> Holt die neueste Version des Projekts vom Server (z. B. wenn etwas verbessert wurde)."],
+  ["sudo systemctl restart roboterarm",
+   "<b>Neu starten:</b> Startet den Roboter-Dienst im Hintergrund neu, damit Updates wirken. <code>sudo</code> = mit Administrator-Rechten."],
+  ["python3 calibrate.py",
+   "<b>Kalibrieren:</b> Stellt die Servos genau ein (Mitte, Grenzen, Richtung). Geht auch bequem im Web-Tab <b>⚙ Kalibrieren</b>."],
+];
+document.getElementById("cmd-liste").innerHTML=CMDS.map(([c,e])=>`
+  <div class="cmd-row">
+    <div class="cmd-code"><button class="copy" title="Kopieren">⧉</button>${c.replace(/&/g,"&amp;").replace(/</g,"&lt;")}</div>
+    <div class="cmd-erkl">${e}</div>
+  </div>`).join("");
 
 /* Kopier-Buttons */
 document.querySelectorAll(".copy").forEach(b=>b.addEventListener("click",()=>{

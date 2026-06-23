@@ -81,7 +81,8 @@ _MIME = {".html": "text/html; charset=utf-8", ".js": "text/javascript", ".mjs": 
          ".css": "text/css", ".json": "application/json", ".map": "application/json",
          ".svg": "image/svg+xml", ".png": "image/png", ".jpg": "image/jpeg", ".gif": "image/gif",
          ".ico": "image/x-icon", ".woff": "font/woff", ".woff2": "font/woff2", ".ttf": "font/ttf",
-         ".wasm": "application/wasm", ".wav": "audio/wav", ".mp3": "audio/mpeg", ".hex": "application/octet-stream"}
+         ".wasm": "application/wasm", ".wav": "audio/wav", ".mp3": "audio/mpeg", ".hex": "application/octet-stream",
+         ".pdf": "application/pdf"}
 
 
 def _mime(pfad: str) -> str:
