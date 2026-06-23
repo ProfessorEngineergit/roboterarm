@@ -237,7 +237,7 @@ function zeigeStufen(){
         <div style="flex:1;"><h3>Stufe ${s.id} · ${s.name}</h3><p>${s.unter} · ${s.lekt.length} Lektionen</p>
         ${offen?`<div class="mini-bar"><i style="width:${proz}%"></i></div>`:`<p style="margin-top:6px;">🔒 Erst Stufe ${s.id-1} abschließen</p>`}</div>
         ${x.fertig?`<span class="haken">✓ Note ${nt.toFixed(1)}</span>`:""}</div>`;}).join("")}</div>
-    ${alleFertig()?`<div style="text-align:center;margin-top:24px;"><button class="btn green gross" onclick="zeigeZert()">🎓 Zertifikat herunterladen</button></div>`:""}`;
+    ${alleFertig()?`<div style="text-align:center;margin-top:24px;"><button class="btn green gross" onclick="zurFertigSeite()">🎓 Zur Zertifikat-Seite</button></div>`:""}`;
 }
 function starteStufe(i){aktiv=i;reset();const x=st(STUFEN[i].id);if(x.fertig){x.idx=0;x.used=0;x.fertig=false;}lidx=x.idx||0;tippBenutzt=false;loesDiese=false;verlauf=[];speichern();render();}
 
@@ -306,12 +306,18 @@ function endeStufe(){
       <p class="lead" style="margin:6px auto 6px;">Deine Note für diese Stufe: <b style="color:var(--termgreen);font-size:22px;">${nt.toFixed(1)}</b> (${noteText(nt)})</p>
       <p class="klein" style="margin-bottom:18px;">Lösungen genutzt: ${x.used} von ${s.lekt.length} · Gesamtnote: <b>${(noteGesamt()).toFixed(1)}</b></p>
       <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
-        ${letzte?`<button class="btn green gross" onclick="zeigeZert()">🎓 Zertifikat herunterladen</button>`:`<button class="btn primary gross" onclick="starteStufe(${aktiv+1})">Weiter zu Stufe ${s.id+1} →</button>`}
+        ${letzte?`<button class="btn green gross" onclick="zurFertigSeite()">🎓 Zertifikat holen →</button>`:`<button class="btn primary gross" onclick="starteStufe(${aktiv+1})">Weiter zu Stufe ${s.id+1} →</button>`}
         <button class="btn gross" onclick="zeigeStufen()">Alle Stufen</button></div></div>`;
   konfetti(40);
 }
 
 /* ===== Zertifikat ===== */
+function zurFertigSeite(){
+  const snap={name:S.name||"",datum:Date.now(),gesamt:noteGesamt(),
+    stufen:STUFEN.map(s=>{const x=st(s.id);return{id:s.id,name:s.name,note:x.fertig?noteAus(x.used,s.lekt.length):null};})};
+  localStorage.setItem("shelltrainer_zert",JSON.stringify(snap));
+  location.href="../fertig/"+(S.name?("?name="+encodeURIComponent(S.name)):"");
+}
 function zeigeZert(){
   aktiv=null;document.getElementById("ortBadge").textContent="Zertifikat";
   const heute=new Date().toLocaleDateString("de-DE",{day:"2-digit",month:"long",year:"numeric"});

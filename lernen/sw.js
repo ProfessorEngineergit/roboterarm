@@ -1,9 +1,10 @@
 /* Terminal-Schule — Service Worker (Offline-Caching / PWA).
    Cache-first für die App-Shell, danach Netzwerk. Version hochzählen = Update. */
-const CACHE = "terminal-schule-v2";
+const CACHE = "terminal-schule-v3";
 const ASSETS = [
   "./", "./index.html", "./style.css", "./manifest.json", "./icon.svg",
   "./trainer/", "./trainer/index.html",
+  "./fertig/", "./fertig/index.html",
   "./fonts/orbitron.woff2", "./loesungen.pdf"
 ];
 
