@@ -58,20 +58,6 @@
           { opcode: "geheZu", blockType: B.COMMAND, text: "gehe zu x [X] y [Y] z [Z]",
             arguments: { X: { type: T.NUMBER, defaultValue: 120 }, Y: { type: T.NUMBER, defaultValue: 0 },
                          Z: { type: T.NUMBER, defaultValue: 60 } } },
-          "---",
-          { opcode: "suche", blockType: B.COMMAND, text: "drehe bis [ZIEL] sichtbar",
-            arguments: { ZIEL: { type: T.STRING, defaultValue: "rot" } } },
-          { opcode: "zentriere", blockType: B.COMMAND, text: "zentriere auf [ZIEL]",
-            arguments: { ZIEL: { type: T.STRING, defaultValue: "rot" } } },
-          { opcode: "hole", blockType: B.COMMAND, text: "hole [ZIEL]",
-            arguments: { ZIEL: { type: T.STRING, defaultValue: "rot" } } },
-          { opcode: "sieht", blockType: B.BOOLEAN, text: "sehe ich [ZIEL]?",
-            arguments: { ZIEL: { type: T.STRING, defaultValue: "rot" } } },
-          "---",
-          { opcode: "lerne", blockType: B.COMMAND, text: "lerne [LABEL] mit [ANZAHL] Bildern",
-            arguments: { LABEL: { type: T.STRING, defaultValue: "Ball" }, ANZAHL: { type: T.NUMBER, defaultValue: 15 } } },
-          { opcode: "trainiere", blockType: B.COMMAND, text: "trainiere KI" },
-          { opcode: "erkanntes", blockType: B.REPORTER, text: "erkanntes Objekt" },
         ],
         menus: {
           gelenke: { items: ["basis", "schulter", "ellbogen"] },
@@ -86,13 +72,6 @@
     greifer(a) { return post("/api/greifer", { aktion: a.AKTION }); }
     tempo(a) { return post("/api/tempo", { grad: Number(a.GRAD) }); }
     geheZu(a) { return post("/api/gehe_zu", { x: Number(a.X), y: Number(a.Y), z: Number(a.Z) }); }
-    suche(a) { return post("/api/verhalten/suche", { ziel: a.ZIEL }); }
-    zentriere(a) { return post("/api/verhalten/zentriere", { ziel: a.ZIEL }); }
-    hole(a) { return post("/api/verhalten/hole", { ziel: a.ZIEL }); }
-    async sieht(a) { return Boolean((await get("/api/sieht?ziel=" + encodeURIComponent(a.ZIEL))).sieht); }
-    lerne(a) { return post("/api/ki/lerne", { label: a.LABEL, anzahl: Number(a.ANZAHL) }); }
-    trainiere() { return post("/api/ki/trainiere"); }
-    async erkanntes() { return (await get("/api/ki/erkenne")).label || ""; }
   }
 
   Scratch.extensions.register(new Roboterarm());

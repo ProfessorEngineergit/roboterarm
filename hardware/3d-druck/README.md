@@ -18,7 +18,8 @@ Roboterarm. **Es wird nichts zusätzlich gekauft** — alles entsteht aus vorhan
 
 ## Teil 1 — Der Arm (vorab, durch Betreuer:innen)
 
-Wir verwenden den **EEZYbotARM MK2** von Carlo Franciscone (offen, bewährt).
+Wir verwenden den **EEZYbotARM MK1** von Carlo Franciscone (offen, bewährt) — die
+kompakte 9-g-Servo-Variante (4× MG90S).
 Die Dateien sind **nicht** im Repo enthalten — einmalig beziehen:
 
 ```bash

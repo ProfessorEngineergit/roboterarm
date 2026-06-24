@@ -72,7 +72,24 @@ def frame_bild(frame):
 def status() -> dict:
     return {"backend": type(arm._ctrl.backend).__name__,
             "winkel": arm.alle_winkel(),
+            "aktiv": dict(arm._ctrl.aktiv),
             "projekt": arm.cfg.projekt}
+
+
+# Mime-Typen für die lokal ausgelieferte TurboWarp-Oberfläche (web/turbowarp/).
+_MIME = {".html": "text/html; charset=utf-8", ".js": "text/javascript", ".mjs": "text/javascript",
+         ".css": "text/css", ".json": "application/json", ".map": "application/json",
+         ".svg": "image/svg+xml", ".png": "image/png", ".jpg": "image/jpeg", ".gif": "image/gif",
+         ".ico": "image/x-icon", ".woff": "font/woff", ".woff2": "font/woff2", ".ttf": "font/ttf",
+         ".wasm": "application/wasm", ".wav": "audio/wav", ".mp3": "audio/mpeg", ".hex": "application/octet-stream",
+         ".pdf": "application/pdf"}
+
+
+def _mime(pfad: str) -> str:
+    return _MIME.get(os.path.splitext(pfad)[1].lower(), "application/octet-stream")
+
+
+TURBOWARP = os.path.join(WEB, "turbowarp")
 
 
 # --------------------------- Code-Ausführ-Engine ---------------------------
@@ -183,6 +200,10 @@ class Handler(BaseHTTPRequestHandler):
 
         if p in ("/", "/index.html"):
             return self._datei(os.path.join(WEB, "index.html"))
+        if p == "/roboterarm_extension.js":
+            # Scratch/TurboWarp-Extension direkt vom Board laden (Ein-Klick, offline).
+            return self._datei(os.path.join(ROOT, "scratch", "roboterarm_extension.js"),
+                               "text/javascript")
         if p.startswith("/static/"):
             datei = os.path.normpath(os.path.join(WEB, p.lstrip("/")))
             if not datei.startswith(os.path.join(WEB, "static")):
@@ -190,9 +211,34 @@ class Handler(BaseHTTPRequestHandler):
             typ = "text/javascript" if datei.endswith(".js") else (
                 "text/css" if datei.endswith(".css") else "application/octet-stream")
             return self._datei(datei, typ)
+        if p == "/turbowarp" or p.startswith("/turbowarp/"):
+            rel = p[len("/turbowarp"):].lstrip("/") or "index.html"
+            datei = os.path.normpath(os.path.join(TURBOWARP, rel))
+            if not (datei == TURBOWARP or datei.startswith(TURBOWARP + os.sep)):
+                return self._json({"fehler": "verboten"}, 403)
+            if os.path.isdir(datei):
+                datei = os.path.join(datei, "index.html")
+            return self._datei(datei, _mime(datei))
+        if p == "/api/scratch/status":
+            return self._json({"vorhanden": os.path.isfile(os.path.join(TURBOWARP, "index.html"))})
+        if p == "/lernen" or p.startswith("/lernen/"):
+            rel = p[len("/lernen"):].lstrip("/") or "index.html"
+            base = os.path.join(ROOT, "lernen")
+            datei = os.path.normpath(os.path.join(base, rel))
+            if not (datei == base or datei.startswith(base + os.sep)):
+                return self._json({"fehler": "verboten"}, 403)
+            if os.path.isdir(datei):
+                datei = os.path.join(datei, "index.html")
+            return self._datei(datei, _mime(datei))
 
         if p == "/api/status":
             return self._json(status())
+        if p == "/api/kalib":
+            g = {n: {"kanal": x.kanal, "min_winkel": x.min_winkel, "max_winkel": x.max_winkel,
+                     "home": x.home, "offset": x.offset, "invertiert": x.invertiert}
+                 for n, x in arm.cfg.gelenke.items()}
+            return self._json({"gelenke": g, "greifer_auf": arm.cfg.greifer_auf,
+                               "greifer_zu": arm.cfg.greifer_zu})
         if p == "/api/kamera.img":
             with sperre:
                 bild, typ = frame_bild(arm.kamera.frame())
@@ -260,6 +306,20 @@ class Handler(BaseHTTPRequestHandler):
         p = urlparse(self.path).path
         d = self._body()
 
+        # ---- NOT-AUS: laufende Bewegung sofort abbrechen, dann ALLE Servos stromlos ----
+        if p == "/api/panik":
+            arm.not_aus()                       # bricht laufende Interpolation sofort ab (keine Sperre)
+            runner.stop()                       # laufenden Python-Code beenden
+            with sperre:
+                for name in arm.cfg.gelenke:
+                    arm.servo(name, False)      # jeden Kanal stromlos schalten
+            return self._json(status())
+
+        # Jede bewusste Bewegung hebt einen vorherigen NOT-AUS wieder auf.
+        if p in ("/api/gelenk", "/api/bewege", "/api/greifer", "/api/home", "/api/gehe_zu",
+                 "/api/tempo", "/api/pose/anfahren", "/api/aufnahme/wiedergabe"):
+            arm.weiter()
+
         # ---- Bewegung ----
         if p == "/api/gelenk":
             if d.get("name") not in arm.cfg.gelenke:
@@ -275,6 +335,46 @@ class Handler(BaseHTTPRequestHandler):
             with sperre:
                 (arm.greifer.auf if d.get("aktion") == "auf" else arm.greifer.zu)()
             return self._json(status())
+        if p == "/api/servo":
+            if d.get("name") not in arm.cfg.gelenke:
+                return self._json({"fehler": "unbekanntes Gelenk"}, 400)
+            an = bool(d.get("an", True))
+            if an:
+                arm.weiter()                    # Einschalten hebt einen vorherigen NOT-AUS auf
+            with sperre:
+                arm.servo(d["name"], an)
+            return self._json(status())
+
+        # ---- Kalibrierung (grafisch in der Weboberfläche) ----
+        if p == "/api/kalib/test":              # Servo OHNE Winkelgrenzen fahren (Endpunkte finden)
+            if d.get("name") not in arm.cfg.gelenke:
+                return self._json({"fehler": "unbekanntes Gelenk"}, 400)
+            arm.weiter()
+            with sperre:
+                arm._ctrl.aktiv[d["name"]] = True
+                arm._ctrl.setze(d["name"], float(d.get("winkel", 90)), sanft=False, grenzen=False)
+            return self._json(status())
+        if p == "/api/kalib/set":               # Grenzen/Home/Offset/Richtung übernehmen (live)
+            name = d.get("name")
+            if name not in arm.cfg.gelenke:
+                return self._json({"fehler": "unbekanntes Gelenk"}, 400)
+            g = arm.cfg.gelenke[name]
+            for k in ("min_winkel", "max_winkel", "home", "offset"):
+                if d.get(k) is not None:
+                    setattr(g, k, float(d[k]))
+            if "invertiert" in d:
+                g.invertiert = bool(d["invertiert"])
+            return self._json({"ok": True})
+        if p == "/api/kalib/greifer":
+            if d.get("auf") is not None:
+                arm.cfg.greifer_auf = float(d["auf"])
+            if d.get("zu") is not None:
+                arm.cfg.greifer_zu = float(d["zu"])
+            return self._json({"ok": True})
+        if p == "/api/kalib/speichern":
+            from roboterarm.config import speichere_config
+            pfad = speichere_config(arm.cfg)
+            return self._json({"ok": True, "pfad": pfad})
         if p == "/api/home":
             with sperre:
                 arm.home()
@@ -323,6 +423,9 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json(status())
             except KeyError as e:
                 return self._json({"fehler": str(e)}, 404)
+        if p == "/api/pose/loeschen":
+            arm.projekt.pose_loeschen(d.get("name", ""))
+            return self._json({"ok": True, "posen": arm.projekt.posen()})
 
         # ---- Aufnahme ----
         if p == "/api/aufnahme/start":
