@@ -1,0 +1,44 @@
+{
+  "name": "Demo-Tanz (Winken & Welle)",
+  "arme": [
+    "roboterarm-01.local",
+    "roboterarm-02.local",
+    "roboterarm-03.local"
+  ],
+  "tempo": 5,
+  "schritte": [
+    {"home": true, "warte": 1.2},
+
+    {"gelenk": "schulter", "winkel": 60, "warte": 0.5},
+    {"greifer": "auf", "warte": 0.3},
+    {"greifer": "zu", "warte": 0.3},
+    {"greifer": "auf", "warte": 0.3},
+    {"greifer": "zu", "warte": 0.5},
+
+    {"gelenk": "basis", "winkel": 45, "warte": 0.6},
+    {"gelenk": "basis", "winkel": 135, "warte": 0.6},
+    {"gelenk": "basis", "winkel": 90, "warte": 0.6},
+
+    {"gelenk": "ellbogen", "winkel": 60, "warte": 0.5},
+    {"gelenk": "ellbogen", "winkel": 130, "warte": 0.5},
+
+    {"per_arm": {
+        "roboterarm-01.local": {"gelenk": "schulter", "winkel": 140},
+        "roboterarm-02.local": {"gelenk": "schulter", "winkel": 90},
+        "roboterarm-03.local": {"gelenk": "schulter", "winkel": 50}
+      }, "warte": 0.6},
+    {"per_arm": {
+        "roboterarm-01.local": {"gelenk": "schulter", "winkel": 50},
+        "roboterarm-02.local": {"gelenk": "schulter", "winkel": 140},
+        "roboterarm-03.local": {"gelenk": "schulter", "winkel": 90}
+      }, "warte": 0.6},
+    {"per_arm": {
+        "roboterarm-01.local": {"gelenk": "schulter", "winkel": 90},
+        "roboterarm-02.local": {"gelenk": "schulter", "winkel": 50},
+        "roboterarm-03.local": {"gelenk": "schulter", "winkel": 140}
+      }, "warte": 0.6},
+
+    {"gelenk": "basis", "winkel": 90, "warte": 0.3},
+    {"home": true, "warte": 1.0}
+  ]
+}
