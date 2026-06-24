@@ -13,6 +13,14 @@ import os
 import threading
 import time
 
+# Absolute Sicherheits-Pulsgrenzen (µs). Egal wie weit beim Kalibrieren über die
+# Winkelgrenze gefahren oder wie groß der Offset gesetzt wird — der Servo bekommt
+# nie eine Pulsbreite außerhalb dieses Fensters. MG90S verträgt ca. 400–2600 µs;
+# das gibt schief montierten Armen etwas Spielraum, ohne den Servo in den
+# Anschlag zu zwingen / zu beschädigen.
+PULS_HARTLIMIT_MIN = 400.0
+PULS_HARTLIMIT_MAX = 2600.0
+
 
 def _hardware_verfuegbar() -> bool:
     try:
@@ -82,7 +90,8 @@ class PCA9685Backend(ServoBackend):
 
     def setze_puls(self, kanal: int, mikrosekunden: float) -> None:
         periode_us = 1_000_000.0 / self.freq
-        off = int(round(mikrosekunden / periode_us * 4096)) & 0x0FFF
+        off = int(round(mikrosekunden / periode_us * 4096))
+        off = max(0, min(4095, off))            # auf 12 Bit klemmen (NICHT wrappen -> sonst springt der Servo)
         basis = self.LED0_ON_L + 4 * kanal
         self._schreibe(basis + 0, 0)            # ON_L
         self._schreibe(basis + 1, 0)            # ON_H
@@ -129,7 +138,8 @@ class ServoController:
             w = (g.min_winkel + g.max_winkel) - w
         w += g.offset
         spanne = g.puls_max - g.puls_min
-        return g.puls_min + (w / 180.0) * spanne
+        puls = g.puls_min + (w / 180.0) * spanne
+        return max(PULS_HARTLIMIT_MIN, min(PULS_HARTLIMIT_MAX, puls))   # Servo-Schutz
 
     def _anwenden(self, name: str, winkel: float) -> None:
         g = self.cfg.gelenke[name]

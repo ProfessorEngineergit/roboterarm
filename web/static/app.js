@@ -421,6 +421,9 @@ async function codeTick() {
 
 // ----------------------------- ⚙ Kalibrieren -----------------------------
 let KALIB_TEST = {};      // letzter Test-Reglerwert je Gelenk
+// Test-Regler darf bewusst ÜBER 0–180 hinaus (für schief montierte Arme, z.B. Station 2/3).
+// Der Servo selbst wird im Backend hart geschützt (PULS_HARTLIMIT_*), kann also nicht beschädigt werden.
+const KAL_MIN = -90, KAL_MAX = 270;
 async function renderKalib() {
   const k = await API.get("/api/kalib");
   KALIBDATA = k;
@@ -464,8 +467,8 @@ function kalibKarte(n, g) {
         <span class="schieber"></span></label> Drehrichtung umkehren
     </div>
     <div class="gelenk" style="margin-top:12px">
-      <label><span>Test-Regler (ohne Limit)</span> <b id="kt_${n}">${Math.round(g.home)}°</b></label>
-      <input type="range" min="0" max="180" value="${g.home}" oninput="kalibTestLive('${n}', this.value)">
+      <label><span>Test-Regler (ohne Limit, auch über 0–180 hinaus)</span> <b id="kt_${n}">${Math.round(g.home)}°</b></label>
+      <input type="range" min="${KAL_MIN}" max="${KAL_MAX}" value="${g.home}" oninput="kalibTestLive('${n}', this.value)">
     </div>
     <div class="reihe">
       min <input type="number" id="kmin_${n}" value="${g.min_winkel}">
