@@ -1,22 +1,22 @@
-# Bauen & Drucken — Anleitung
+# Bauen & Drucken - Anleitung
 
 Diese Anleitung steht für sich: Sie führt vom leeren Druckbett zum fertig montierten
-Roboterarm. **Es wird nichts zusätzlich gekauft** — alles entsteht aus vorhandenem
+Roboterarm. **Es wird nichts zusätzlich gekauft** - alles entsteht aus vorhandenem
 3D-Drucker und Filament.
 
 > **Prinzip:** Die Betreuer:innen drucken die Arm-Teile **vorab** (das dauert lange).
-> Jedes Kind druckt im Workshop **genau ein eigenes Teil** als 3D-Druck-Erlebnis —
+> Jedes Kind druckt im Workshop **genau ein eigenes Teil** als 3D-Druck-Erlebnis -
 > sein **Namensschild** (oder den Kamera-Clip). So ist jede:r dran, ohne dass die
 > Drucker zum Engpass werden.
 
 ## Was du brauchst (alles vorhanden)
 - 3D-Drucker (FDM) + **PLA**-Filament
-- Slicer (z. B. PrusaSlicer, Cura) — kostenlos
+- Slicer (z. B. PrusaSlicer, Cura) - kostenlos
 - Python 3 (für den Namensschild-Generator; ohne Zusatzpakete)
 
 ---
 
-## Teil 1 — Der Arm (vorab, durch Betreuer:innen)
+## Teil 1 - Der Arm (vorab, durch Betreuer:innen)
 
 Wir verwenden den **EEZYbotARM MK1** von Carlo Franciscone (offen, bewährt) — die
 kompakte 9-g-Servo-Variante (4× MG90S).
@@ -33,24 +33,24 @@ Quellen & Lizenz/Attribution: siehe [CREDITS.md](CREDITS.md).
 |---|---|
 | Material | PLA |
 | Schichthöhe | 0,2 mm |
-| Infill | 25–35 % (tragende Teile eher 35 %) |
+| Infill | 25-35 % (tragende Teile eher 35 %) |
 | Wände/Perimeter | 3 |
 | Stützen | nur wo nötig (Greifer-/Gelenkteile mit Überhang) |
 | Ausrichtung | größte flache Fläche aufs Bett |
 
 **Mengen:** ein Arm besteht aus mehreren Teilen (Basis, Drehturm, Ober-/Unterarm,
-Greifer, Hebel). Pro Arm grob **150–250 g PLA** und **viele Stunden** Druck → für
-**3 Arme rechtzeitig (1–2 Wochen) vorher** starten und über Nacht laufen lassen.
+Greifer, Hebel). Pro Arm grob **150-250 g PLA** und **viele Stunden** Druck → für
+**3 Arme rechtzeitig (1-2 Wochen) vorher** starten und über Nacht laufen lassen.
 
 > Tipp: Bewegliche Gelenkbolzen leichtgängig drucken (etwas Spiel). Servohörner erst
-> in Grundstellung montieren — Details zur Elektronik/Kalibrierung in
+> in Grundstellung montieren - Details zur Elektronik/Kalibrierung in
 > [`../../docs/hardware.md`](../../docs/hardware.md).
 
 ---
 
-## Teil 2 — Das Kinder-Teil (live im Workshop)
+## Teil 2 - Das Kinder-Teil (live im Workshop)
 
-Klein, schnell (~10–20 min), **ohne Stützen** — perfekt fürs erste Erlebnis.
+Klein, schnell (~10-20 min), **ohne Stützen** - perfekt fürs erste Erlebnis.
 
 ### A) Namensschild (empfohlen)
 Eigenes Schild aus dem Namen erzeugen und drucken:
@@ -61,7 +61,7 @@ python3 namensschild.py "TEAM 1" ANNA  # auch mehrere auf einmal
 ```
 
 Beispiel-Dateien liegen bei: `namensschild_MAX.stl`, `namensschild_ANNA.stl`,
-`namensschild_TEAM-1.stl`. Im Slicer öffnen → PLA, 0,2 mm, 15–20 % Infill,
+`namensschild_TEAM-1.stl`. Im Slicer öffnen → PLA, 0,2 mm, 15-20 % Infill,
 **keine Stützen** → drucken. Anschließend an die Station kleben/klemmen.
 
 ### B) Kamera-Clip (Alternative)
