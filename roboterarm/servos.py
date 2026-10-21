@@ -10,7 +10,16 @@ erzwingt Winkelgrenzen und fährt Ziele *sanft* (interpoliert) an.
 from __future__ import annotations
 
 import os
+import threading
 import time
+
+# Absolute Sicherheits-Pulsgrenzen (µs). Egal wie weit beim Kalibrieren über die
+# Winkelgrenze gefahren oder wie groß der Offset gesetzt wird — der Servo bekommt
+# nie eine Pulsbreite außerhalb dieses Fensters. MG90S verträgt ca. 400–2600 µs;
+# das gibt schief montierten Armen etwas Spielraum, ohne den Servo in den
+# Anschlag zu zwingen / zu beschädigen.
+PULS_HARTLIMIT_MIN = 400.0
+PULS_HARTLIMIT_MAX = 2600.0
 
 
 def _hardware_verfuegbar() -> bool:
@@ -24,6 +33,10 @@ def _hardware_verfuegbar() -> bool:
 class ServoBackend:
     def setze_puls(self, kanal: int, mikrosekunden: float) -> None:
         raise NotImplementedError
+
+    def abschalten(self, kanal: int) -> None:
+        """Kanal stromlos schalten (kein PWM) -> Servo wird kraftlos/locker."""
+        pass
 
     def schliessen(self) -> None:
         pass
@@ -40,6 +53,11 @@ class SimBackend(ServoBackend):
         self.pulse[kanal] = mikrosekunden
         if self.verbose:
             print(f"[SIM] Kanal {kanal}: {mikrosekunden:.0f} µs")
+
+    def abschalten(self, kanal: int) -> None:
+        self.pulse[kanal] = 0.0
+        if self.verbose:
+            print(f"[SIM] Kanal {kanal}: aus")
 
 
 class PCA9685Backend(ServoBackend):
@@ -72,12 +90,21 @@ class PCA9685Backend(ServoBackend):
 
     def setze_puls(self, kanal: int, mikrosekunden: float) -> None:
         periode_us = 1_000_000.0 / self.freq
-        off = int(round(mikrosekunden / periode_us * 4096)) & 0x0FFF
+        off = int(round(mikrosekunden / periode_us * 4096))
+        off = max(0, min(4095, off))            # auf 12 Bit klemmen (NICHT wrappen -> sonst springt der Servo)
         basis = self.LED0_ON_L + 4 * kanal
         self._schreibe(basis + 0, 0)            # ON_L
         self._schreibe(basis + 1, 0)            # ON_H
         self._schreibe(basis + 2, off & 0xFF)   # OFF_L
         self._schreibe(basis + 3, off >> 8)     # OFF_H
+
+    def abschalten(self, kanal: int) -> None:
+        # "Full OFF": Bit 4 im OFF_H-Register -> kein PWM mehr, Servo wird kraftlos.
+        basis = self.LED0_ON_L + 4 * kanal
+        self._schreibe(basis + 0, 0)            # ON_L
+        self._schreibe(basis + 1, 0)            # ON_H
+        self._schreibe(basis + 2, 0)            # OFF_L
+        self._schreibe(basis + 3, 0x10)         # OFF_H, Full-OFF-Bit
 
     def schliessen(self) -> None:
         try:
@@ -99,6 +126,8 @@ class ServoController:
     def __init__(self, cfg, backend: ServoBackend | None = None):
         self.cfg = cfg
         self.backend = backend or erzeuge_backend(cfg)
+        self.gestoppt = threading.Event()        # NOT-AUS: unterbindet Bewegung
+        self.aktiv: dict[str, bool] = {n: True for n in cfg.gelenke}   # Servo an/aus je Gelenk
         self.winkel: dict[str, float] = {n: g.home for n, g in cfg.gelenke.items()}
         for name, w in self.winkel.items():     # Anfangsstellung anfahren
             self._anwenden(name, w)
@@ -109,7 +138,8 @@ class ServoController:
             w = (g.min_winkel + g.max_winkel) - w
         w += g.offset
         spanne = g.puls_max - g.puls_min
-        return g.puls_min + (w / 180.0) * spanne
+        puls = g.puls_min + (w / 180.0) * spanne
+        return max(PULS_HARTLIMIT_MIN, min(PULS_HARTLIMIT_MAX, puls))   # Servo-Schutz
 
     def _anwenden(self, name: str, winkel: float) -> None:
         g = self.cfg.gelenke[name]
@@ -119,8 +149,21 @@ class ServoController:
         g = self.cfg.gelenke[name]
         return max(g.min_winkel, min(g.max_winkel, winkel))
 
-    def setze(self, name: str, ziel: float, sanft: bool = True, speed: float | None = None) -> float:
-        ziel = self.grenzen(name, ziel)
+    def schalte(self, name: str, an: bool) -> None:
+        """Servo eines Gelenks an- (hält Position) oder ausschalten (wird kraftlos)."""
+        self.aktiv[name] = bool(an)
+        g = self.cfg.gelenke[name]
+        if an:
+            self._anwenden(name, self.winkel[name])   # wieder bestromen, aktuelle Position halten
+        else:
+            self.backend.abschalten(g.kanal)
+
+    def setze(self, name: str, ziel: float, sanft: bool = True, speed: float | None = None,
+              grenzen: bool = True) -> float:
+        if self.gestoppt.is_set() or not self.aktiv.get(name, True):   # NOT-AUS oder Servo aus
+            return self.winkel[name]
+        if grenzen:                                  # bei Kalibrierung aus, um Endpunkte zu finden
+            ziel = self.grenzen(name, ziel)
         start = self.winkel[name]
         schrittweite = speed if (speed and speed > 0) else self.cfg.speed_grad_pro_schritt
         if not sanft or schrittweite <= 0:
@@ -129,6 +172,8 @@ class ServoController:
             return ziel
         n = max(1, int(abs(ziel - start) / schrittweite))
         for i in range(1, n + 1):
+            if self.gestoppt.is_set():           # NOT-AUS während der Fahrt -> sofort anhalten
+                return self.winkel[name]
             w = start + (ziel - start) * i / n
             self.winkel[name] = w
             self._anwenden(name, w)

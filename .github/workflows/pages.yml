@@ -1,0 +1,41 @@
+name: Lern-Website auf GitHub Pages deployen
+
+# Veröffentlicht den Ordner lernen/ als statische Website.
+# Einmalig nötig: Repo -> Settings -> Pages -> Source = "GitHub Actions".
+# Danach läuft das hier automatisch bei jedem Push auf main, der lernen/ ändert.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "lernen/**"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Code auschecken
+        uses: actions/checkout@v4
+      - name: Pages konfigurieren
+        uses: actions/configure-pages@v5
+      - name: Ordner lernen/ als Artefakt hochladen
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: lernen
+      - name: Auf GitHub Pages veröffentlichen
+        id: deployment
+        uses: actions/deploy-pages@v4
