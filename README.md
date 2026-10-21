@@ -1,21 +1,21 @@
 # roboterarm 🤖
 
-Offene Lern-Plattform für einen **3D-gedruckten KI-Roboterarm** — ein offener
+Offene Lern-Plattform für einen **3D-gedruckten KI-Roboterarm** - ein offener
 „LEGO-Spike-Klon" für den Schul-/Workshop-Einsatz (Grundschule bis Oberstufe).
 
-Dieselben Fähigkeiten — **Bewegung, Kamera, maschinelles Lernen** — auf **drei Ebenen**:
+Dieselben Fähigkeiten - **Bewegung, Kamera, maschinelles Lernen** - auf **drei Ebenen**:
 
 > **Scratch-Blöcke → EduBlocks/Python (Blöcke = Code) → voller Python**
 
 …und das **generisch für beliebige Objekte** (nicht nur „ein Ball") sowie **komplett offline**
 auf dem Gerät (Radxa ROCK Pi 4 SE + USB-Kamera + PCA9685-Servos). Alles läuft auch ohne
-Hardware in **Simulation** — auf jedem Laptop.
+Hardware in **Simulation** - auf jedem Laptop.
 
 ## Highlights
 
 - 🦾 **Eine veröffentlichte API** (`roboterarm.Arm`), die alle Ebenen aufrufen.
 - 🎨 **Generische Wahrnehmung:** beliebige Farben (`rot`, `blau`, …, eigene HSV) **oder** gelernte Objekte.
-- 🧠 **ML-Studio:** beliebige Klassen, Training in Millisekunden (kNN/Centroid/LogReg), **Confusion-Matrix** — offline, ohne NPU.
+- 🧠 **ML-Studio:** beliebige Klassen, Training in Millisekunden (kNN/Centroid/LogReg), **Confusion-Matrix** - offline, ohne NPU.
 - 🕹️ **Web-Oberfläche:** Manuell · Vision · KI-Studio · Code-Editor (mit Ausführung) · Aufnahme/Posen.
 - 🧩 **Scratch-3-Extension** + EduBlocks/Thonny-Brücke (eine API, drei Darstellungen).
 - 🔁 **Sim/Hardware automatisch:** identischer Code am Laptop und am Board.
@@ -24,7 +24,7 @@ Hardware in **Simulation** — auf jedem Laptop.
 ## 🛠️ Bauen & Drucken (es wird nichts gekauft)
 
 Die Arm-Teile (**EEZYbotARM MK2**) werden von den Betreuer:innen **vorab** gedruckt; jedes
-Kind druckt im Workshop **genau ein eigenes Teil** — sein **Namensschild** — als 3D-Druck-Erlebnis:
+Kind druckt im Workshop **genau ein eigenes Teil** - sein **Namensschild** - als 3D-Druck-Erlebnis:
 
 ```bash
 python3 hardware/3d-druck/namensschild.py MAX     # -> namensschild_MAX.stl (drucken, fertig)
@@ -33,7 +33,7 @@ python3 hardware/3d-druck/namensschild.py MAX     # -> namensschild_MAX.stl (dru
 Vollständige, eigenständige **Bau- & Druckanleitung** (Druckeinstellungen, Teileliste, Montage):
 **[hardware/3d-druck/README.md](hardware/3d-druck/README.md)**.
 
-## Schnellstart (Simulation — ohne Hardware, nur `numpy`)
+## Schnellstart (Simulation - ohne Hardware, nur `numpy`)
 
 ```bash
 ROBOTERARM_BACKEND=sim PYTHONPATH=. python3 examples/find_ball.py     # finden→zentrieren→aufheben
@@ -112,4 +112,4 @@ ROBOTERARM_BACKEND=sim PYTHONPATH=. python3 -m unittest discover -s tests -v
 
 ## Lizenz
 
-MIT — siehe [LICENSE](LICENSE). Doku: [`docs/`](docs). Mitmachen: [CONTRIBUTING.md](CONTRIBUTING.md).
+MIT - siehe [LICENSE](LICENSE). Doku: [`docs/`](docs). Mitmachen: [CONTRIBUTING.md](CONTRIBUTING.md).
