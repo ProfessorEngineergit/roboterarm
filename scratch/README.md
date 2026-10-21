@@ -2,7 +2,7 @@
 
 Die Datei [`roboterarm_extension.js`](roboterarm_extension.js) ist eine Scratch-3-Erweiterung.
 Sie baut **keine eigene Block-Sprache**, sondern legt eine Handvoll Befehls- und Fühler-Blöcke
-über die bestehende `roboterarm`-API — die Blöcke rufen per HTTP den lokalen Dienst
+über die bestehende `roboterarm`-API - die Blöcke rufen per HTTP den lokalen Dienst
 ([`service/robot_service.py`](../service/robot_service.py)) auf. Damit steuern Kinder
 **denselben Arm** wie über Python, nur in Scratch.
 
@@ -25,7 +25,7 @@ ROBOTERARM_BACKEND=sim PYTHONPATH=. python3 service/robot_service.py   # Sim/Tes
 
 1. [turbowarp.org/editor](https://turbowarp.org/editor) öffnen (oder TurboWarp Desktop).
 2. Unten links **Erweiterung hinzufügen** → **Eigene Erweiterung** → **Datei** → `roboterarm_extension.js` wählen.
-   *(Beim Laden aus Datei fragt TurboWarp nach „unsandboxed" — bestätigen, da die Extension `fetch` nutzt.)*
+   *(Beim Laden aus Datei fragt TurboWarp nach „unsandboxed" - bestätigen, da die Extension `fetch` nutzt.)*
 3. Die Block-Kategorie **Roboterarm** erscheint.
 
 > Original-Scratch-GUI selbst hosten ist auch möglich (`scratch-gui` per npm builden und
