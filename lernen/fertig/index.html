@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Zertifikat</title>
+<meta name="theme-color" content="#0a0c11">
+<link rel="manifest" href="../manifest.json">
+<link rel="icon" href="../icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../style.css">
+<style>
+  .tnav{display:flex;align-items:center;gap:16px;padding:12px 22px;border-bottom:1px solid var(--outline);
+    background:rgba(12,14,20,.7);backdrop-filter:blur(14px);position:sticky;top:0;z-index:50;}
+  .panel{max-width:760px;margin:24px auto;padding:0 22px;}
+
+  /* Intro-Animation */
+  .intro{position:fixed;inset:0;z-index:200;display:grid;place-items:center;background:#05080a;
+    transition:opacity .6s;text-align:center;overflow:hidden;}
+  .intro.weg{opacity:0;pointer-events:none;}
+  .intro canvas{position:absolute;inset:0;opacity:.4;}
+  .intro .mid{position:relative;z-index:2;}
+  .intro .pokal{font-size:96px;animation:pop .7s cubic-bezier(.2,1.4,.4,1) both;}
+  .intro h1{font-size:42px;margin:6px 0 0;color:#9bffc8;letter-spacing:2px;text-shadow:0 0 18px rgba(73,255,160,.6);
+    animation:pop .7s .15s cubic-bezier(.2,1.4,.4,1) both;}
+  .intro p{color:#3ddc84;letter-spacing:3px;text-transform:uppercase;font-size:12px;animation:pop .7s .3s both;}
+  @keyframes pop{from{transform:scale(.4);opacity:0;}to{transform:scale(1);opacity:1;}}
+
+  .nameblock{text-align:center;margin-bottom:18px;}
+  .nameblock input{font-size:17px;padding:12px 16px;width:300px;max-width:80vw;text-align:center;}
+
+  /* Zertifikat — Matrix-Dark, druckt hell um */
+  .zert{position:relative;overflow:hidden;background:#05080a;color:#54f7a0;border:2px solid #1c7a4d;border-radius:10px;
+    padding:46px 44px 36px;max-width:700px;margin:10px auto;text-align:center;font-family:ui-monospace,"SF Mono",Menlo,monospace;
+    box-shadow:0 0 0 1px #0a3a24,0 0 36px rgba(57,255,150,.22),var(--e3);}
+  .zert::before{content:"";position:absolute;inset:9px;border:1px solid #176b43;border-radius:6px;pointer-events:none;z-index:2;}
+  .zert>*{position:relative;z-index:2;}
+  .zert .matrixrain{position:absolute;inset:0;z-index:1;opacity:.22;pointer-events:none;}
+  .zert .sub{letter-spacing:5px;text-transform:uppercase;font-size:11px;color:#3ddc84;}
+  .zert h1{font-size:38px;margin:10px 0 4px;color:#9bffc8;letter-spacing:2px;text-shadow:0 0 12px rgba(73,255,160,.6);}
+  .zert .vor{font-size:13px;color:#3a9c6a;}
+  .zert .name{font-size:32px;margin:16px auto 6px;border-bottom:1px solid #1c7a4d;display:inline-block;padding:0 28px 8px;
+    color:#e6fff2;text-shadow:0 0 10px rgba(73,255,160,.55);}
+  .zert table{margin:20px auto 4px;border-collapse:collapse;font-size:13.5px;min-width:380px;}
+  .zert th{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:#3ddc84;padding:0 16px 7px;border-bottom:1px solid #1c7a4d;}
+  .zert td{padding:8px 16px;border-bottom:1px solid #103524;}
+  .zert tr:nth-child(even) td{background:rgba(40,255,150,.06);}
+  .zert td.l{text-align:left;} .zert td.n{font-weight:700;color:#9bffc8;font-size:15px;}
+  .zert .gesamt{font-size:16px;margin-top:16px;color:#cdeede;}
+  .zert .gesamt b{font-size:30px;color:#9bffc8;vertical-align:-3px;text-shadow:0 0 12px rgba(73,255,160,.6);}
+  .zert .dim{color:#3a9c6a;}
+  .zert .siegel{width:80px;height:80px;margin:18px auto 6px;border-radius:50%;display:grid;place-items:center;font-size:38px;
+    background:#08130d;color:#9bffc8;border:2px solid #1c7a4d;box-shadow:0 0 18px rgba(73,255,160,.4),inset 0 0 14px rgba(73,255,160,.2);}
+  .zert .ort{margin-top:10px;font-size:14px;letter-spacing:3px;color:#54f7a0;font-weight:700;}
+  .zert .datum{margin-top:3px;font-size:11.5px;color:#3a9c6a;}
+
+  /* Stick-Karte */
+  .stick{margin:26px auto 0;max-width:700px;background:var(--glass);border:1px solid var(--outline);
+    border-radius:var(--r);box-shadow:var(--e2);backdrop-filter:blur(8px);overflow:hidden;}
+  .stick .kopf{padding:18px 22px 10px;}
+  .stick h3{margin:0 0 4px;font-size:19px;}
+  .stick .lead{margin:0;color:var(--muted);font-size:14px;}
+  .tabs{display:flex;gap:8px;padding:0 22px;flex-wrap:wrap;}
+  .tabs button{background:var(--surface-2);border:1px solid var(--outline);color:var(--text);font-weight:700;
+    border-radius:999px 999px 0 0;padding:9px 18px;cursor:pointer;font-size:14px;}
+  .tabs button.an{background:#0a0e16;border-bottom-color:#0a0e16;color:var(--termgreen);}
+  .codebox{background:#0a0e16;border-top:1px solid var(--outline);padding:18px 22px 22px;}
+  .codebox pre{margin:0 0 12px;background:#070b12;border:1px solid #232b3a;border-radius:12px;padding:14px 16px;
+    overflow:auto;font-family:ui-monospace,monospace;font-size:13.5px;line-height:1.6;color:#d7e3f4;white-space:pre-wrap;}
+  .codebox .hinweis{color:var(--muted);font-size:13px;margin:0 0 12px;}
+  .codebox .hinweis b{color:var(--amber);}
+
+  .zert-aktionen{text-align:center;margin-top:18px;}
+
+  @media print{
+    body{background:#fff!important;} .tnav,.zert-aktionen,.no-print,.stick,.nameblock,.intro{display:none!important;} .panel{margin:0;}
+    .zert{background:#fff!important;color:#0a3a24!important;border:2px solid #0a5a34!important;box-shadow:none!important;
+      -webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    .zert::before{border-color:#9ab8a8!important;}
+    .zert .matrixrain{display:none!important;}
+    .zert h1,.zert .name,.zert .gesamt b,.zert td.n,.zert .ort{color:#0a5a34!important;text-shadow:none!important;}
+    .zert .sub,.zert th,.zert .vor,.zert .dim,.zert .datum{color:#3a6a52!important;}
+    .zert td{color:#0a3a24!important;} .zert tr:nth-child(even) td{background:#eef6f0!important;}
+    .zert .siegel{background:#eef6f0!important;color:#0a5a34!important;border-color:#0a5a34!important;box-shadow:none!important;}
+  }
+</style>
+</head>
+<body>
+
+<!-- Intro-Animation -->
+<div class="intro" id="intro">
+  <canvas id="introrain"></canvas>
+  <div class="mid">
+    <div class="pokal">🏆</div>
+    <h1>Geschafft!</h1>
+    <p>Terminal-Schule · Zertifikat</p>
+  </div>
+</div>
+
+<nav class="tnav">
+  <a class="logo" href="../" style="text-decoration:none;color:var(--text);font-weight:800;">🐢 Terminal-Schule</a>
+  <a class="btn" href="../trainer/" style="margin-left:auto;">← Zurück zum Trainer</a>
+</nav>
+
+<div class="panel">
+  <div class="nameblock no-print">
+    <p class="lead" style="margin:0 0 8px;">Trag deinen Namen ein — er erscheint sofort auf dem Zertifikat.</p>
+    <input id="zname" placeholder="Dein Name" autocomplete="off">
+  </div>
+
+  <div class="zert" id="zert">
+    <canvas class="matrixrain" id="mrain"></canvas>
+    <div class="sub">Roboterarm-Workshop · Terminal-Schule</div>
+    <h1>🎓 Zertifikat</h1>
+    <div class="vor">Hiermit wird bestätigt, dass</div>
+    <div class="name" id="zn">………………</div>
+    <div class="vor">die Kommandozeile gemeistert hat.</div>
+    <table id="ztab"></table>
+    <div class="gesamt" id="zges"></div>
+    <div class="siegel">🤖</div>
+    <div class="ort">MakerLab FFM</div>
+    <div class="datum" id="zdat"></div>
+  </div>
+
+  <div class="zert-aktionen no-print">
+    <button class="btn green gross" onclick="window.print()">🖨️ Als PDF speichern / Drucken</button>
+  </div>
+
+  <!-- Stick-Karte -->
+  <div class="stick no-print">
+    <div class="kopf">
+      <h3>💾 Zertifikat auf einen USB-Stick kopieren</h3>
+      <p class="lead">Speichere oben zuerst als <b>Zertifikat.pdf</b> in deinen <b>Downloads</b>. Dann steck den Stick ein und kopiere mit einem dieser Befehle.</p>
+    </div>
+    <div class="tabs">
+      <button data-os="win" class="an" onclick="osWahl('win')">🪟 Windows</button>
+      <button data-os="mac" onclick="osWahl('mac')"> Mac</button>
+      <button data-os="linux" onclick="osWahl('linux')">🐧 Linux</button>
+    </div>
+    <div class="codebox">
+      <div id="os-win">
+        <p class="hinweis">Öffne <b>PowerShell</b> (Startmenü → „PowerShell" tippen). Dieser Befehl findet den Stick automatisch:</p>
+        <pre id="c-win">$stick = (Get-Volume | Where-Object DriveType -eq 'Removable' | Select-Object -First 1).DriveLetter
+Copy-Item "$HOME\Downloads\Zertifikat.pdf" "$($stick):\Zertifikat.pdf"
+Write-Host "Fertig! Auf Laufwerk $stick: kopiert." -ForegroundColor Green</pre>
+        <button class="btn" onclick="kopiere('c-win',this)">📋 Befehl kopieren</button>
+      </div>
+      <div id="os-mac" style="display:none;">
+        <p class="hinweis">Öffne <b>Terminal</b> (⌘+Leertaste → „Terminal"). Ersetze <b>STICK-NAME</b> durch den Namen deines Sticks:</p>
+        <pre id="c-mac">cp ~/Downloads/Zertifikat.pdf "/Volumes/STICK-NAME/"</pre>
+        <p class="hinweis">Stick-Namen anzeigen: <b>ls /Volumes</b></p>
+        <button class="btn" onclick="kopiere('c-mac',this)">📋 Befehl kopieren</button>
+      </div>
+      <div id="os-linux" style="display:none;">
+        <p class="hinweis">Öffne ein <b>Terminal</b>. Ersetze <b>STICK-NAME</b> durch den Namen deines Sticks:</p>
+        <pre id="c-linux">cp ~/Downloads/Zertifikat.pdf "/media/$USER/STICK-NAME/"</pre>
+        <p class="hinweis">Stick-Namen anzeigen: <b>ls /media/$USER</b></p>
+        <button class="btn" onclick="kopiere('c-linux',this)">📋 Befehl kopieren</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ===== Daten laden ===== */
+function noteText(n){return n==null?"—":n<=1.5?"sehr gut":n<=2.5?"gut":n<=3.5?"befriedigend":n<=4.5?"ausreichend":n<=5.5?"mangelhaft":"ungenügend";}
+const params=new URLSearchParams(location.search);
+let snap=null;
+try{snap=JSON.parse(localStorage.getItem("shelltrainer_zert")||"null");}catch(e){}
+let name=params.get("name")||(snap&&snap.name)||"";
+
+function renderZert(){
+  document.getElementById("zn").textContent=name||"………………";
+  const tab=document.getElementById("ztab"),ges=document.getElementById("zges");
+  let zeilen="<tr><th class='l'>Stufe</th><th>Note</th><th>Bewertung</th></tr>";
+  if(snap&&snap.stufen&&snap.stufen.length){
+    for(const s of snap.stufen){const n=s.note;
+      zeilen+=`<tr><td class="l">Stufe ${s.id} · ${s.name}</td><td class="n">${n==null?"—":n.toFixed(1)}</td><td>${noteText(n)}</td></tr>`;}
+    const g=snap.gesamt;
+    ges.innerHTML=`Gesamtnote: <b>${g==null?"—":g.toFixed(1)}</b> &nbsp; <span class="dim">(${noteText(g)})</span>`;
+  }else{
+    zeilen+=`<tr><td class="l" colspan="3" style="text-align:center;color:#3a9c6a;">Trainer abgeschlossen 🎉</td></tr>`;
+    ges.innerHTML="";
+  }
+  tab.innerHTML=zeilen;
+  const d=snap&&snap.datum?new Date(snap.datum):new Date();
+  document.getElementById("zdat").textContent="Ausgestellt am "+d.toLocaleDateString("de-DE",{day:"2-digit",month:"long",year:"numeric"});
+}
+const inp=document.getElementById("zname");
+inp.value=name;
+inp.addEventListener("input",()=>{name=inp.value;renderZert();});
+renderZert();
+
+/* ===== OS-Switcher ===== */
+function osWahl(os){
+  for(const id of ["win","mac","linux"]){
+    document.getElementById("os-"+id).style.display=(id===os)?"block":"none";
+    document.querySelector('.tabs button[data-os="'+id+'"]').classList.toggle("an",id===os);
+  }
+}
+function kopiere(id,btn){
+  const t=document.getElementById(id).textContent;
+  navigator.clipboard.writeText(t).then(()=>{const o=btn.textContent;btn.textContent="✓ Kopiert!";setTimeout(()=>btn.textContent=o,1600);});
+}
+
+/* ===== Matrix-Animation ===== */
+function startMatrix(id,opacity){
+  const c=document.getElementById(id);if(!c)return;const z=c.parentElement;
+  c.width=z.clientWidth;c.height=z.clientHeight;const ctx=c.getContext("2d");
+  const zeichen="01ﾊﾐﾋｰｳ$+*<>=lscdgrep".split(""),sp=14,cols=Math.max(1,Math.floor(c.width/sp));
+  const y=Array(cols).fill(0).map(()=>Math.random()*c.height);
+  clearInterval(c._t);
+  c._t=setInterval(()=>{
+    if(!c.isConnected){clearInterval(c._t);return;}
+    ctx.fillStyle="rgba(5,8,10,"+(opacity||.18)+")";ctx.fillRect(0,0,c.width,c.height);
+    ctx.fillStyle="#39ff95";ctx.font=sp+"px ui-monospace,monospace";
+    for(let i=0;i<cols;i++){ctx.fillText(zeichen[Math.floor(Math.random()*zeichen.length)],i*sp,y[i]);
+      y[i]=(y[i]>c.height&&Math.random()>.975)?0:y[i]+sp;}
+  },60);
+}
+function konfetti(n){const emo=["🎉","⭐","🟦","🟪","🟩","✨","🤖"];for(let i=0;i<n;i++){const d=document.createElement("div");
+  d.style.cssText="position:fixed;top:-20px;font-size:22px;pointer-events:none;z-index:210;animation:fall linear forwards;";
+  d.textContent=emo[i%emo.length];d.style.left=Math.random()*100+"vw";d.style.animationDuration=(2+Math.random()*2)+"s";
+  d.style.animationDelay=(Math.random()*.5)+"s";document.body.appendChild(d);setTimeout(()=>d.remove(),4500);}}
+const fk=document.createElement("style");fk.textContent="@keyframes fall{to{transform:translateY(105vh) rotate(540deg);opacity:.9;}}";document.head.appendChild(fk);
+
+/* ===== Start ===== */
+startMatrix("introrain",.12);
+konfetti(46);
+setTimeout(()=>{document.getElementById("intro").classList.add("weg");startMatrix("mrain",.18);
+  if(!name)inp.focus();},2400);
+</script>
+</body>
+</html>

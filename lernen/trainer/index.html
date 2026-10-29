@@ -1,0 +1,372 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shell-Trainer 🎮 — Terminal-Schule</title>
+<meta name="theme-color" content="#0a0c11">
+<link rel="manifest" href="../manifest.json">
+<link rel="icon" href="../icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../style.css">
+<style>
+  .tnav{display:flex;align-items:center;gap:16px;padding:12px 22px;border-bottom:1px solid var(--outline);
+    background:rgba(12,14,20,.7);backdrop-filter:blur(14px);position:sticky;top:0;z-index:50;}
+  .stats{display:flex;gap:10px;margin-left:auto;align-items:center;flex-wrap:wrap;}
+  .pill{display:flex;align-items:center;gap:7px;background:var(--surface-2);border:1px solid var(--outline);
+    border-radius:999px;padding:6px 14px;font-weight:700;font-size:14px;}
+  .pill.note b{color:var(--termgreen);} .pill.warn b{color:var(--amber);}
+  .bar{height:10px;border-radius:999px;background:var(--surface-2);overflow:hidden;border:1px solid var(--outline);}
+  .bar>i{display:block;height:100%;background:var(--grad2);width:0;transition:width .4s;}
+  .panel{max-width:880px;margin:24px auto;padding:0 22px;}
+  .stufen{display:grid;gap:18px;}
+  .stufe{position:relative;display:flex;gap:18px;align-items:center;padding:22px;border-radius:var(--r);
+    background:var(--glass);border:1px solid var(--outline);box-shadow:var(--e1);cursor:pointer;
+    transition:transform .14s,box-shadow .14s,border-color .14s;backdrop-filter:blur(8px);}
+  .stufe:hover{transform:translateY(-3px);box-shadow:var(--e2);border-color:var(--primary);}
+  .stufe.zu{opacity:.5;filter:grayscale(.4);cursor:not-allowed;}
+  .stufe .nr{width:60px;height:60px;border-radius:18px;display:grid;place-items:center;font-size:30px;background:var(--grad);box-shadow:var(--e1);flex:0 0 auto;}
+  .stufe.s2 .nr{background:linear-gradient(135deg,#16a34a,#5eead4);} .stufe.s3 .nr{background:linear-gradient(135deg,#9b8cff,#f472b6);}
+  .stufe h3{margin:0 0 3px;font-size:20px;} .stufe p{margin:0;color:var(--muted);font-size:14px;}
+  .stufe .mini-bar{height:7px;border-radius:999px;background:var(--surface-2);margin-top:9px;overflow:hidden;max-width:240px;}
+  .stufe .mini-bar>i{display:block;height:100%;background:var(--grad2);}
+  .stufe .haken{position:absolute;top:14px;right:16px;color:var(--green);font-weight:800;font-size:13px;}
+  .aufgabe{background:var(--glass);border:1px solid var(--outline);border-radius:var(--r);padding:22px 24px;box-shadow:var(--e2);backdrop-filter:blur(8px);}
+  .aufgabe .kap{font-size:12px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--violet);}
+  .aufgabe h2{font-size:22px;margin:8px 0 6px;}
+  .hint{margin-top:12px;padding:12px 14px;border-radius:12px;background:#1a2236;border:1px dashed #3a4a6e;color:#cdd9f2;font-size:14px;display:none;}
+  .loesbox{margin-top:10px;padding:12px 14px;border-radius:12px;background:#2a1f16;border:1px solid #6e4a2a;color:#ffe0b8;font-size:14px;display:none;font-family:ui-monospace,monospace;}
+  .hint code,.aufgabe code,.loesbox code{background:#0b0f17;padding:2px 7px;border-radius:6px;color:var(--termgreen);font-family:ui-monospace,monospace;}
+  .konsole{margin-top:16px;background:#0a0e16;border:1px solid #232b3a;border-radius:14px;box-shadow:var(--e2);overflow:hidden;}
+  .konsole .bar2{display:flex;align-items:center;gap:8px;height:34px;padding:0 13px;background:linear-gradient(180deg,#1b2230,#141a26);border-bottom:1px solid #232b3a;}
+  .scroll{padding:14px 16px;max-height:260px;overflow:auto;font-family:ui-monospace,monospace;font-size:13.5px;line-height:1.55;color:#d7e3f4;white-space:pre-wrap;}
+  .scroll .pr{color:var(--primary);} .scroll .cmd{color:#fff;} .scroll .dir{color:var(--cyan);} .scroll .ok{color:var(--termgreen);} .scroll .err{color:#ff8585;} .scroll .mut{color:var(--muted);}
+  .eingabe{display:flex;align-items:center;gap:8px;padding:11px 16px;border-top:1px solid #232b3a;background:#0b1019;font-family:ui-monospace,monospace;}
+  .eingabe .pr{color:var(--primary);white-space:nowrap;} .eingabe .dir{color:var(--cyan);}
+  .eingabe input{flex:1;background:transparent;border:none;outline:none;color:#fff;font-family:ui-monospace,monospace;font-size:14px;}
+  .aktionen{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;}
+  .erfolg{display:none;margin-top:16px;padding:16px 18px;border-radius:14px;background:linear-gradient(135deg,#143a2a,#16352f);border:1px solid #2f7a5a;color:#caffe6;align-items:center;gap:12px;}
+  .erfolg.an{display:flex;flex-wrap:wrap;}
+  .konfetti{position:fixed;top:-20px;font-size:22px;pointer-events:none;z-index:99;animation:fall linear forwards;}
+  @keyframes fall{to{transform:translateY(105vh) rotate(540deg);opacity:.9;}}
+  .ende{text-align:center;} .ende .pokal{font-size:70px;}
+  /* Zertifikat — Matrix-Dark, druckt hell um */
+  .zert{position:relative;overflow:hidden;background:#05080a;color:#54f7a0;border:2px solid #1c7a4d;border-radius:10px;
+    padding:46px 44px 36px;max-width:700px;margin:10px auto;text-align:center;font-family:ui-monospace,"SF Mono",Menlo,monospace;
+    box-shadow:0 0 0 1px #0a3a24,0 0 36px rgba(57,255,150,.22),var(--e3);}
+  .zert::before{content:"";position:absolute;inset:9px;border:1px solid #176b43;border-radius:6px;pointer-events:none;z-index:2;}
+  .zert>*{position:relative;z-index:2;}
+  .zert .matrixrain{position:absolute;inset:0;z-index:1;opacity:.22;pointer-events:none;}
+  .zert .sub{letter-spacing:5px;text-transform:uppercase;font-size:11px;color:#3ddc84;}
+  .zert h1{font-size:38px;margin:10px 0 4px;color:#9bffc8;letter-spacing:2px;text-shadow:0 0 12px rgba(73,255,160,.6);}
+  .zert .vor{font-size:13px;color:#3a9c6a;}
+  .zert .name{font-size:32px;margin:16px auto 6px;border-bottom:1px solid #1c7a4d;display:inline-block;padding:0 28px 8px;
+    color:#e6fff2;text-shadow:0 0 10px rgba(73,255,160,.55);}
+  .zert table{margin:20px auto 4px;border-collapse:collapse;font-size:13.5px;min-width:380px;}
+  .zert th{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:#3ddc84;padding:0 16px 7px;border-bottom:1px solid #1c7a4d;}
+  .zert td{padding:8px 16px;border-bottom:1px solid #103524;}
+  .zert tr:nth-child(even) td{background:rgba(40,255,150,.06);}
+  .zert td.l{text-align:left;} .zert td.n{font-weight:700;color:#9bffc8;font-size:15px;}
+  .zert .gesamt{font-size:16px;margin-top:16px;color:#cdeede;}
+  .zert .gesamt b{font-size:30px;color:#9bffc8;vertical-align:-3px;text-shadow:0 0 12px rgba(73,255,160,.6);}
+  .zert .dim{color:#3a9c6a;}
+  .zert .siegel{width:80px;height:80px;margin:18px auto 6px;border-radius:50%;display:grid;place-items:center;font-size:38px;
+    background:#08130d;color:#9bffc8;border:2px solid #1c7a4d;box-shadow:0 0 18px rgba(73,255,160,.4),inset 0 0 14px rgba(73,255,160,.2);}
+  .zert .ort{margin-top:10px;font-size:14px;letter-spacing:3px;color:#54f7a0;font-weight:700;}
+  .zert .datum{margin-top:3px;font-size:11.5px;color:#3a9c6a;}
+  @media print{
+    body{background:#fff!important;} .tnav,.zert-aktionen,.no-print{display:none!important;} .panel{margin:0;}
+    .zert{background:#fff!important;color:#0a3a24!important;border:2px solid #0a5a34!important;box-shadow:none!important;
+      -webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    .zert::before{border-color:#9ab8a8!important;}
+    .zert .matrixrain{display:none!important;}
+    .zert h1,.zert .name,.zert .gesamt b,.zert td.n,.zert .ort{color:#0a5a34!important;text-shadow:none!important;}
+    .zert .sub,.zert th,.zert .vor,.zert .dim,.zert .datum{color:#3a6a52!important;}
+    .zert td{color:#0a3a24!important;} .zert tr:nth-child(even) td{background:#eef6f0!important;}
+    .zert .siegel{background:#eef6f0!important;color:#0a5a34!important;border-color:#0a5a34!important;box-shadow:none!important;}
+  }
+</style>
+</head>
+<body>
+
+<div class="tnav">
+  <a class="logo" href="../" style="text-decoration:none;color:var(--text);font-weight:800;">🐢 Terminal-Schule</a>
+  <span class="badge" id="ortBadge">Stufen</span>
+  <div class="stats">
+    <span class="pill">⭐ <span id="xp">0</span> XP</span>
+    <span class="pill warn">👀 Lösungen: <b id="loes">0</b></span>
+    <span class="pill note">📊 Note: <b id="note">—</b></span>
+  </div>
+</div>
+
+<div class="panel"><div id="inhalt"></div></div>
+
+<script>
+/* ===== Dateisystem ===== */
+const HOME=["home","roboter"];
+const frischesFS=()=>({home:{t:"d",c:{roboter:{t:"d",c:{
+  roboterarm:{t:"d",c:{
+    service:{t:"d",c:{"robot_service.py":{t:"f",c:"# der Roboter-Webserver\nport = 8765"}}},
+    web:{t:"d",c:{}}, deploy:{t:"d",c:{"hotspot.sh":{t:"f",c:"#!/usr/bin/env bash"}}},
+    ".git":{t:"d",c:{}}, "README.md":{t:"f",c:"# roboterarm"}, "install.sh":{t:"f",c:"#!/usr/bin/env bash"}
+  }},
+  bilder:{t:"d",c:{"arm.png":{t:"f",c:"(bild)"},"katze.jpg":{t:"f",c:"(miau)"},"arm2.png":{t:"f",c:"(bild)"}}},
+  ".geheim":{t:"f",c:"Das Passwort ist: roboter123"},
+  "notizen.txt":{t:"f",c:"Hallo Roboter!\nHeute lerne ich das Terminal.\nMorgen programmiere ich den Arm."}
+}}}}});
+let FS,cwd;
+function reset(){FS=frischesFS();cwd=HOME.slice();}
+function knoten(arr){let n={t:"d",c:FS};for(const s of arr){if(!n.c||!n.c[s])return null;n=n.c[s];}return n;}
+function elternC(arr){const n=knoten(arr.slice(0,-1));return n&&n.t==="d"?n.c:null;}
+function aufloesen(arg){let segs;
+  if(arg==="~"||arg===undefined)return HOME.slice();
+  if(arg.startsWith("/"))segs=arg.split("/").filter(Boolean);
+  else if(arg.startsWith("~/"))segs=HOME.concat(arg.slice(2).split("/").filter(Boolean));
+  else segs=cwd.concat(arg.split("/").filter(Boolean));
+  const out=[];for(const s of segs){if(s===".")continue;if(s===".."){out.pop();}else out.push(s);}return out;}
+function pfadStr(arr){if(arr.length>=2&&arr[0]==="home"&&arr[1]==="roboter"){const r=arr.slice(2);return r.length?"~/"+r.join("/"):"~";}return "/"+arr.join("/");}
+const esc=s=>String(s).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+
+/* ===== Engine ===== */
+function listePlain(arr,v){const n=knoten(arr);if(!n)return null;if(n.t==="f")return[arr[arr.length-1]];let k=Object.keys(n.c);if(!v)k=k.filter(x=>!x.startsWith("."));return k.map(x=>n.c[x].t==="d"?x+"/":x);}
+function runPlain(tok){const name=tok[0],args=tok.slice(1);
+  if(name==="ls"){const a=args.find(x=>!x.startsWith("-"));const l=listePlain(a?aufloesen(a):cwd,args.some(f=>f.includes("a")));return l||[];}
+  if(name==="cat"){const n=knoten(aufloesen(args[0]||""));return n&&n.t==="f"?String(n.c).split("\n"):[];}
+  if(name==="echo")return[args.join(" ")];return[];}
+function fuehreAus(zeile){
+  const roh=zeile.trim();
+  if(roh.includes("|")){const teile=roh.split("|").map(s=>s.trim());let zeilen=runPlain(teile[0].match(/"[^"]*"|\S+/g)||[]);
+    for(let i=1;i<teile.length;i++){const t=teile[i].match(/"[^"]*"|\S+/g)||[];
+      if(t[0]==="grep"&&t[1]){const w=t[1].replace(/"/g,"").toLowerCase();zeilen=zeilen.filter(z=>z.toLowerCase().includes(w));}
+      else return{o:[`<span class="err">unbekannt nach | : ${esc(t[0]||"")}</span>`],name:"pipe",args:[],raw:roh};}
+    return{o:zeilen.length?zeilen.map(esc):['<span class="mut">(nichts gefunden)</span>'],name:"pipe",args:[],raw:roh};}
+  const t=roh.match(/"[^"]*"|\S+/g)||[];const name=t[0],args=t.slice(1).map(a=>a.replace(/^"|"$/g,""));
+  const o=[],raw=roh;const fehler=m=>o.push(`<span class="err">${esc(m)}</span>`);
+  if(!name)return{o,name:"",args,raw};
+  switch(name){
+    case "pwd":o.push(pfadStr(cwd));break;
+    case "ls":{const ziel=args.find(a=>!a.startsWith("-")),flags=args.filter(a=>a.startsWith("-")).join(""),lang=flags.includes("l");
+      const n=knoten(ziel?aufloesen(ziel):cwd);
+      if(!n)fehler(`ls: ${ziel}: nicht gefunden`);else if(n.t==="f")o.push(esc(ziel));
+      else{let k=Object.keys(n.c);if(!flags.includes("a"))k=k.filter(x=>!x.startsWith("."));
+        if(!k.length){o.push('<span class="mut">(leer)</span>');break;}
+        if(lang)k.forEach(x=>o.push(`${n.c[x].t==="d"?"drwxr-xr-x":"-rw-r--r--"}  ${n.c[x].t==="d"?`<span class="dir">${esc(x)}/</span>`:esc(x)}`));
+        else o.push(k.map(x=>n.c[x].t==="d"?`<span class="dir">${esc(x)}/</span>`:esc(x)).join("  "));}break;}
+    case "cd":{const arr=aufloesen(args[0]);const n=knoten(arr);if(!n)fehler(`cd: ${args[0]}: nicht gefunden`);else if(n.t!=="d")fehler(`cd: ${args[0]}: kein Ordner`);else cwd=arr;break;}
+    case "cat":{if(!args[0]){fehler("cat: welche Datei?");break;}const n=knoten(aufloesen(args[0]));if(!n)fehler(`cat: ${args[0]}: nicht gefunden`);else if(n.t!=="f")fehler(`cat: ${args[0]}: ist ein Ordner`);else o.push(esc(n.c));break;}
+    case "grep":{const w=(args[0]||"").toLowerCase(),f=args[1];if(!w||!f){fehler("grep: nutze  grep wort datei");break;}const n=knoten(aufloesen(f));if(!n||n.t!=="f"){fehler(`grep: ${f}: keine Datei`);break;}const tr=String(n.c).split("\n").filter(z=>z.toLowerCase().includes(w));o.push(tr.length?tr.map(esc).join("\n"):'<span class="mut">(nichts gefunden)</span>');break;}
+    case "mkdir":{if(!args[0]){fehler("mkdir: welcher Name?");break;}const c=knoten(cwd).c;c[args[0]]?fehler(`mkdir: ${args[0]}: gibt es schon`):c[args[0]]={t:"d",c:{}};break;}
+    case "touch":{if(!args[0]){fehler("touch: welcher Name?");break;}knoten(cwd).c[args[0]]??={t:"f",c:""};break;}
+    case "cp":{const[a,b]=args;const c=knoten(cwd).c;if(!a||!b){fehler("cp: nutze  cp quelle ziel");break;}if(!c[a]){fehler(`cp: ${a}: nicht gefunden`);break;}if(c[b]&&c[b].t==="d")c[b].c[a]=JSON.parse(JSON.stringify(c[a]));else c[b]=JSON.parse(JSON.stringify(c[a]));break;}
+    case "mv":{const[a,b]=args;const c=knoten(cwd).c;if(!a||!b){fehler("mv: nutze  mv quelle ziel");break;}if(!c[a]){fehler(`mv: ${a}: nicht gefunden`);break;}if(c[b]&&c[b].t==="d"){c[b].c[a]=c[a];}else{c[b]=c[a];}delete c[a];break;}
+    case "rm":{const ziel=args.find(a=>!a.startsWith("-"));if(!ziel){fehler("rm: was löschen?");break;}const arr=aufloesen(ziel),c=elternC(arr),nm=arr[arr.length-1];if(!c||!c[nm])fehler(`rm: ${ziel}: nicht gefunden`);else if(c[nm].t==="d"&&!args.includes("-r"))fehler(`rm: ${ziel}: ist ein Ordner (nutze rm -r)`);else delete c[nm];break;}
+    case "echo":{const i=args.indexOf(">");if(i>=0&&args[i+1])knoten(cwd).c[args[i+1]]={t:"f",c:args.slice(0,i).join(" ")};else o.push(esc(args.join(" ")));break;}
+    case "chmod":o.push(args.includes("+x")?'<span class="ok">✓ Datei ist jetzt ausführbar</span>':"");break;
+    case "clear":return{o:[],name,args,raw,clear:true};
+    case "help":o.push('Befehle: <span class="cmd">pwd ls cd cat grep mkdir touch cp mv rm echo clear</span>');o.push('Pipes: <span class="cmd">ls | grep wort</span>');break;
+    case "git":args[0]==="pull"?(pfadStr(cwd).includes("roboterarm")?o.push('<span class="ok">Bereits aktuell.</span>'):fehler("git: hier ist kein Projekt")):fehler(`git: '${args[0]||""}' unbekannt`);break;
+    case "./install.sh":knoten(cwd).c&&knoten(cwd).c["install.sh"]?(o.push('<span class="mut">Pakete …</span>'),o.push('<span class="ok">✓ Fertig!</span>')):fehler("./install.sh: nicht gefunden (geh in roboterarm)");break;
+    case "python3":(args[0]||"").endsWith("robot_service.py")?o.push('<span class="ok">✓ Server läuft: http://10.42.0.1:8765</span>'):fehler(`python3: ${args[0]||""}: nicht gefunden`);break;
+    case "ssh":o.push('<span class="ok">✓ Verbunden mit dem Roboter-Computer!</span>');break;
+    case "sudo":o.push(args.join(" ").includes("restart roboterarm")?'<span class="ok">✓ Dienst neu gestartet.</span>':'<span class="err">sudo: brauchst du hier nicht</span>');break;
+    default:fehler(`${name}: Befehl nicht gefunden. Tippe help`);
+  }
+  return{o,name,args,raw};
+}
+
+/* ===== Lektionen (Tipps = Analogien, nicht der Befehl) ===== */
+const STUFEN=[
+  {id:1,name:"Grundlagen",emoji:"🐣",unter:"Orientieren, bewegen, lesen",lekt:[
+    {kap:"Orientierung",text:"Finde heraus, <b>wo</b> du gerade bist.",hint:"Stell dir vor, du wachst in einem fremden Haus auf. Welcher Raum ist das? Es gibt ein kurzes Wort (3 Buchstaben) für ʼmein aktueller Standortʼ — wie der ʼDu bist hierʼ-Punkt auf einer Karte.",erklaer:"zeigt deinen aktuellen Ordner (print working directory).",loesung:"pwd",ok:c=>c.name==="pwd"},
+    {kap:"Orientierung",text:"Lass dir anzeigen, <b>was</b> hier liegt.",hint:"Du stehst im Raum — schau dich um. Ein 2-Buchstaben-Befehl ʼlistetʼ auf, was alles da ist.",erklaer:"listet den Inhalt des Ordners (list).",loesung:"ls",ok:c=>c.name==="ls"},
+    {kap:"Bewegen",text:"Geh in den Ordner <code>roboterarm</code>.",hint:"Geh durch eine Tür in einen anderen Raum. Der englische Begriff ist ʼchange directoryʼ — nimm die ersten Buchstaben der beiden Wörter, dann den Raumnamen.",erklaer:"wechselt in einen Ordner (change directory).",loesung:"cd roboterarm",ok:c=>c.cwd==="~/roboterarm"},
+    {kap:"Bewegen",text:"Schau, was im Projekt steckt.",hint:"Der gleiche ʼUmschauenʼ-Befehl wie eben — nur stehst du jetzt in einem anderen Raum.",erklaer:"listet auch hier den Inhalt.",loesung:"ls",ok:c=>c.name==="ls"&&c.cwd==="~/roboterarm"},
+    {kap:"Bewegen",text:"Geh tiefer in <code>service</code>.",hint:"Noch eine Tür weiter, tiefer ins Haus. Gleicher Tür-Befehl wie vorhin, dahinter der neue Raumname.",erklaer:"wechselt in den Unterordner service.",loesung:"cd service",ok:c=>c.cwd.endsWith("/service")},
+    {kap:"Bewegen",text:"Geh einen Ordner <b>zurück</b>.",hint:"Wie kommst du eine Etage HOCH? Zwei Punkte bedeuten ʼder Raum über mirʼ. Hänge sie an den Tür-Befehl.",erklaer:"‚..‘ steht für den übergeordneten Ordner.",loesung:"cd ..",ok:c=>c.cwd==="~/roboterarm"},
+    {kap:"Bewegen",text:"Geh ganz <b>nach Hause</b>.",hint:"Es gibt einen ʼnach Hauseʼ-Knopf: der Tür-Befehl ganz ohne Ziel bringt dich in deinen Start-Ordner (die Tilde ~ meint dasselbe).",erklaer:"ohne Ziel bringt dich ins Home-Verzeichnis.",loesung:"cd",ok:c=>c.cwd==="~"},
+    {kap:"Lesen",text:"Lies die Datei <code>notizen.txt</code> vor.",hint:"Du willst einen Brief LESEN, nicht in einen Raum gehen. Ein kleines Tier mit 3 Buchstaben 🐱 zeigt dir den Inhalt einer Datei.",erklaer:"gibt den Inhalt einer Datei aus (concatenate).",loesung:"cat notizen.txt",ok:c=>c.name==="cat"&&c.args[0]==="notizen.txt"},
+    {kap:"Erschaffen",text:"Erstelle den Ordner <code>meine_posen</code>.",hint:"Du brauchst eine neue Schublade. ʼmake directoryʼ — nimm die Anfänge beider Wörter zusammen, dann den Namen.",erklaer:"legt einen neuen Ordner an (make directory).",loesung:"mkdir meine_posen",ok:c=>!!(knoten(cwd).c&&knoten(cwd).c["meine_posen"])},
+    {kap:"Aufräumen",text:"Mach den Bildschirm <b>sauber</b>.",hint:"Deine Tafel ist vollgekritzelt. Ein englisches Wort für ʼsauber machen / leerenʼ wischt sie ab.",erklaer:"leert den Bildschirm (clear).",loesung:"clear",ok:c=>c.name==="clear"},
+  ]},
+  {id:2,name:"Fortgeschritten",emoji:"⚡",unter:"Flags, kopieren, suchen, Pipes",lekt:[
+    {kap:"Geheimnisse",text:"Zeig <b>alle</b> Dateien — auch versteckte (mit Punkt).",hint:"Manche Dateien sind unsichtbar (sie fangen mit einem Punkt an). Hänge an deinen Auflisten-Befehl einen kleinen Schalter an: ein Minus und der erste Buchstabe von ʼallʼ.",erklaer:"-a zeigt auch versteckte Dateien (all).",loesung:"ls -a",ok:c=>c.name==="ls"&&c.args.join("").includes("a")},
+    {kap:"Details",text:"Zeig die Dateien mit <b>Details</b> (lange Liste).",hint:"Du willst nicht nur Namen, sondern Rechte und Größe. Ein anderer Schalter: Minus und der erste Buchstabe von ʼlongʼ.",erklaer:"-l zeigt eine lange Liste mit Details (long).",loesung:"ls -l",ok:c=>c.name==="ls"&&c.args.join("").includes("l")},
+    {kap:"Lesen",text:"Lies die versteckte Datei <code>.geheim</code>.",hint:"Jetzt, wo du Verstecktes siehst — benutze dasselbe Lese-Tier 🐱 wie in Stufe 1, mit dem Punkt-Namen.",erklaer:"liest auch versteckte Dateien.",loesung:"cat .geheim",ok:c=>c.name==="cat"&&c.args[0]===".geheim"},
+    {kap:"Kopieren",text:"Kopiere <code>notizen.txt</code> nach <code>backup.txt</code>.",hint:"Mach eine KOPIE wie mit einem Kopierer. ʼcopyʼ → die ersten zwei Buchstaben, dann Quelle und Ziel.",erklaer:"kopiert eine Datei (copy).",loesung:"cp notizen.txt backup.txt",ok:c=>!!(knoten(cwd).c&&knoten(cwd).c["backup.txt"])},
+    {kap:"Umbenennen",text:"Benenne <code>backup.txt</code> um in <code>sicherung.txt</code>.",hint:"Schieb die Datei auf einen neuen Namen — wie Umräumen. ʼmoveʼ → die ersten zwei Buchstaben, dann alt und neu.",erklaer:"verschiebt / benennt um (move).",loesung:"mv backup.txt sicherung.txt",ok:c=>!!(knoten(cwd).c&&knoten(cwd).c["sicherung.txt"])&&!(knoten(cwd).c["backup.txt"])},
+    {kap:"Suchen",text:"Finde in <code>notizen.txt</code> die Zeile mit dem Wort <code>Arm</code>.",hint:"Eine Nadel im Heuhaufen: du suchst eine bestimmte Zeile. Der Such-Befehl hat 5 Buchstaben (g-r-e-p), dann das Wort und die Datei.",erklaer:"sucht Zeilen mit einem Wort (grep).",loesung:"grep Arm notizen.txt",ok:c=>c.name==="grep"&&(c.args[0]||"").toLowerCase()==="arm"},
+    {kap:"Pipes",text:"Zeig nur die Einträge, die <code>roboter</code> enthalten — mit einer <b>Pipe</b>.",hint:"Stell dir ein Rohr vor (das Zeichen |): das Ergebnis des einen Befehls fließt in den nächsten. Erst auflisten, dann das Rohr, dann durch den Such-Befehl mit dem Wort filtern.",erklaer:"| leitet die Ausgabe in den nächsten Befehl.",loesung:"ls | grep roboter",ok:c=>c.raw.includes("|")&&c.raw.includes("grep")},
+    {kap:"Schreiben",text:"Schreibe <code>Hallo</code> in eine neue Datei <code>gruss.txt</code>.",hint:"ʼechoʼ ruft etwas zurück, wie ein Echo im Wald. Mit einem Pfeil nach rechts (&gt;) kippst du das Echo in eine Datei statt auf den Bildschirm.",erklaer:"> schreibt die Ausgabe in eine Datei.",loesung:"echo Hallo > gruss.txt",ok:c=>!!(knoten(cwd).c&&knoten(cwd).c["gruss.txt"])},
+  ]},
+  {id:3,name:"Profi & Roboter",emoji:"🤖",unter:"Den echten Roboter steuern",lekt:[
+    {kap:"Verbinden",text:"Verbinde dich mit dem Roboter-Computer.",hint:"Du willst dich auf einen ANDEREN Computer einloggen, aus der Ferne — wie ein sicherer Funkkanal. Drei Buchstaben (secure shell), dann benutzer@adresse.",erklaer:"baut eine sichere Fernverbindung auf (secure shell).",loesung:"ssh radxa@roboterarm-01.local",ok:c=>c.name==="ssh"},
+    {kap:"Navigieren",text:"Geh ins Projekt <code>roboterarm</code>.",hint:"Den Tür-Befehl aus Stufe 1 kennst du schon — dahinter der Projektname.",erklaer:"wechselt ins Projektverzeichnis.",loesung:"cd roboterarm",ok:c=>c.cwd==="~/roboterarm"},
+    {kap:"Updaten",text:"Hol die neueste Version vom Server.",hint:"Stell dir vor, du ZIEHST die neuesten Seiten zu dir. ʼpullʼ heißt ziehen — das Werkzeug davor heißt git.",erklaer:"lädt die neueste Version (git pull).",loesung:"git pull",ok:c=>c.name==="git"&&c.args[0]==="pull"},
+    {kap:"Rechte",text:"Mach das Skript <code>install.sh</code> ausführbar.",hint:"Gib der Datei die Erlaubnis zu LAUFEN. ʼchange modeʼ, dann ein Plus und x (x = ausführbar), dann die Datei.",erklaer:"+x erlaubt das Ausführen (change mode).",loesung:"chmod +x install.sh",ok:c=>c.name==="chmod"&&c.args.includes("+x")},
+    {kap:"Installieren",text:"Starte das Installations-Skript.",hint:"Starte ein Skript, das HIER im Raum liegt. Punkt-Schrägstrich heißt ʼin diesem Ordnerʼ, dann der Dateiname.",erklaer:"./ startet ein Skript im aktuellen Ordner.",loesung:"./install.sh",ok:c=>c.name==="./install.sh"},
+    {kap:"Suchen",text:"Finde im Server-Code die Zeile mit <code>port</code>.",hint:"Gleicher Such-Befehl wie in Stufe 2 (5 Buchstaben), dann das Wort und der Pfad zur Datei im service-Ordner.",erklaer:"durchsucht eine Datei nach einem Wort.",loesung:"grep port service/robot_service.py",ok:c=>c.name==="grep"&&(c.args[0]||"").toLowerCase()==="port"},
+    {kap:"Starten",text:"<b>Starte den Roboter-Server!</b> 🚀",hint:"Starte das Programm mit Python (Version 3), dann der Pfad zum Server-Skript im service-Ordner.",erklaer:"startet den Webserver des Roboters.",loesung:"python3 service/robot_service.py",ok:c=>c.name==="python3"&&(c.args[0]||"").endsWith("robot_service.py")},
+  ]},
+];
+
+/* ===== Zustand & Noten ===== */
+let S={xp:0,name:"",stufen:{}};   // stufen[id]={idx,used,fertig}
+let aktiv=null,lidx=0,tippBenutzt=false,loesDiese=false,verlauf=[];
+function laden(){try{S=Object.assign({xp:0,name:"",stufen:{}},JSON.parse(localStorage.getItem("shelltrainer3")||"{}"));}catch(e){}}
+function speichern(){localStorage.setItem("shelltrainer3",JSON.stringify(S));}
+function st(id){return S.stufen[id]||(S.stufen[id]={idx:0,used:0,fertig:false});}
+function stufeOffen(i){return i===0||st(STUFEN[i-1].id).fertig;}
+function noteAus(used,total){if(!total)return null;let n=1+5*(used/total);return Math.max(1,Math.min(6,n));}
+function noteText(n){return n==null?"—":n<=1.5?"sehr gut":n<=2.5?"gut":n<=3.5?"befriedigend":n<=4.5?"ausreichend":n<=5.5?"mangelhaft":"ungenügend";}
+function loesGesamt(){let u=0;for(const s of STUFEN){const x=S.stufen[s.id];if(x)u+=x.used||0;}return u;}
+function noteGesamt(){let u=0,t=0;for(const s of STUFEN){const x=S.stufen[s.id];if(x){u+=x.used||0;t+=x.fertig?s.lekt.length:(x.idx||0);}}return noteAus(u,t);}
+function statsZeichnen(){document.getElementById("xp").textContent=S.xp;document.getElementById("loes").textContent=loesGesamt();
+  const n=noteGesamt();document.getElementById("note").textContent=n==null?"—":n.toFixed(1);}
+function alleFertig(){return STUFEN.every(s=>st(s.id).fertig);}
+
+/* ===== Stufen-Auswahl ===== */
+function zeigeStufen(){
+  aktiv=null;document.getElementById("ortBadge").textContent="Stufen";statsZeichnen();
+  document.getElementById("inhalt").innerHTML=`
+    <h2 style="font-size:28px;margin:6px 0 4px;">Wähle deine Stufe</h2>
+    <p class="lead" style="margin-bottom:20px;">Drei Stufen vom Küken zum Roboter-Profi. Tipp: Probier es erst selbst —
+      jede genutzte Lösung verschlechtert deine Note.</p>
+    <div class="stufen">${STUFEN.map((s,i)=>{const x=st(s.id);const offen=stufeOffen(i);const proz=Math.round((x.idx/s.lekt.length)*100);
+      const nt=x.fertig?noteAus(x.used,s.lekt.length):null;
+      return `<div class="stufe s${s.id} ${offen?"":"zu"}" ${offen?`onclick="starteStufe(${i})"`:""}>
+        <div class="nr">${offen?s.emoji:"🔒"}</div>
+        <div style="flex:1;"><h3>Stufe ${s.id} · ${s.name}</h3><p>${s.unter} · ${s.lekt.length} Lektionen</p>
+        ${offen?`<div class="mini-bar"><i style="width:${proz}%"></i></div>`:`<p style="margin-top:6px;">🔒 Erst Stufe ${s.id-1} abschließen</p>`}</div>
+        ${x.fertig?`<span class="haken">✓ Note ${nt.toFixed(1)}</span>`:""}</div>`;}).join("")}</div>
+    ${alleFertig()?`<div style="text-align:center;margin-top:24px;"><button class="btn green gross" onclick="zurFertigSeite()">🎓 Zur Zertifikat-Seite</button></div>`:""}`;
+}
+function starteStufe(i){aktiv=i;reset();const x=st(STUFEN[i].id);if(x.fertig){x.idx=0;x.used=0;x.fertig=false;}lidx=x.idx||0;tippBenutzt=false;loesDiese=false;verlauf=[];speichern();render();}
+
+/* ===== Terminal + Lektion ===== */
+function termHTML(){return `<div class="konsole"><div class="bar2"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+    <span style="margin-left:8px;color:var(--muted);font-family:ui-monospace,monospace;font-size:12px;">roboter@arm</span></div>
+  <div class="scroll" id="scroll">${verlauf.join("\n")||'<span class="mut">Tippe deinen Befehl und drück Enter ↵</span>'}</div>
+  <div class="eingabe"><span class="pr">roboter@arm</span>:<span class="dir">${esc(pfadStr(cwd))}</span>$
+    <input id="eingabe" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Befehl tippen …"></div></div>`;}
+function bindeEingabe(){const inp=document.getElementById("eingabe");if(!inp)return;inp.focus();inp.addEventListener("keydown",e=>{if(e.key==="Enter"){eingeben(inp.value);inp.value="";}});}
+function render(){
+  const stufe=STUFEN[aktiv],total=stufe.lekt.length;
+  document.getElementById("ortBadge").textContent=`Stufe ${stufe.id} · ${stufe.name}`;statsZeichnen();
+  if(lidx>=total){endeStufe();return;}
+  const l=stufe.lekt[lidx];
+  document.getElementById("inhalt").innerHTML=`
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+      <button class="btn" onclick="zeigeStufen()">← Stufen</button>
+      <div class="bar" style="flex:1;"><i style="width:${(lidx/total*100)}%"></i></div>
+      <span class="klein" style="color:var(--muted);">${lidx+1}/${total}</span></div>
+    <div class="aufgabe"><div class="kap">${stufe.emoji} ${l.kap}</div><h2>${l.text}</h2>
+      <div class="hint" id="hint">💡 ${l.hint}</div>
+      <div class="loesbox" id="loesbox">Lösung: <code>${l.loesung}</code></div>
+      ${termHTML()}
+      <div class="erfolg" id="erfolg"></div>
+      <div class="aktionen">
+        <button class="btn" onclick="zeigeHint()">💡 Tipp</button>
+        <button class="btn" onclick="zeigeLoesung()">🆘 Lösung (zählt!)</button>
+        <button class="btn primary" id="weiter" style="display:none;margin-left:auto;" onclick="weiter()">Weiter →</button>
+      </div></div>`;
+  bindeEingabe();
+}
+function eingeben(zeile){
+  if(!zeile.trim())return;
+  const r=fuehreAus(zeile);
+  verlauf.push(`<span class="pr">roboter@arm</span>:<span class="dir">${esc(pfadStr(cwd))}</span>$ <span class="cmd">${esc(zeile)}</span>`);
+  if(r.clear)verlauf=[];else r.o.forEach(z=>verlauf.push(z));
+  const ctx={name:r.name,args:r.args,cwd:pfadStr(cwd),raw:r.raw};
+  const ok=STUFEN[aktiv].lekt[lidx].ok(ctx);
+  document.querySelector(".konsole").outerHTML=termHTML();bindeEingabe();
+  const sc=document.getElementById("scroll");sc.scrollTop=sc.scrollHeight;
+  if(ok)erfolg();
+}
+function erfolg(){
+  const l=STUFEN[aktiv].lekt[lidx];const punkte=tippBenutzt||loesDiese?6:12;S.xp+=punkte;speichern();statsZeichnen();
+  const e=document.getElementById("erfolg");e.className="erfolg an";
+  e.innerHTML=`<span style="font-size:24px;">🎉</span> <div><b>Richtig!</b> +${punkte} XP<br>
+    <span style="font-size:13.5px;opacity:.92;">Gelernt: <code style="background:#0b2018;padding:2px 7px;border-radius:6px;color:#aef5cf;font-family:ui-monospace,monospace;">${l.loesung}</code> — ${l.erklaer}</span></div>`;
+  document.getElementById("weiter").style.display="inline-flex";
+  const inp=document.getElementById("eingabe");if(inp)inp.disabled=true;
+  if(!loesDiese)konfetti(8);
+}
+function weiter(){lidx++;tippBenutzt=false;loesDiese=false;const x=st(STUFEN[aktiv].id);x.idx=lidx;speichern();render();}
+function zeigeHint(){document.getElementById("hint").style.display="block";}
+function zeigeLoesung(){
+  document.getElementById("loesbox").style.display="block";
+  const inp=document.getElementById("eingabe");if(inp){inp.value=STUFEN[aktiv].lekt[lidx].loesung;inp.focus();}
+  if(!loesDiese){loesDiese=true;st(STUFEN[aktiv].id).used++;speichern();statsZeichnen();}
+}
+function endeStufe(){
+  const s=STUFEN[aktiv],x=st(s.id);x.idx=s.lekt.length;x.fertig=true;speichern();statsZeichnen();
+  const nt=noteAus(x.used,s.lekt.length),letzte=aktiv>=STUFEN.length-1;
+  document.getElementById("inhalt").innerHTML=`
+    <div class="aufgabe ende"><div class="pokal">${letzte?"🏆":"🎉"}</div>
+      <h2>Stufe ${s.id} geschafft!</h2>
+      <p class="lead" style="margin:6px auto 6px;">Deine Note für diese Stufe: <b style="color:var(--termgreen);font-size:22px;">${nt.toFixed(1)}</b> (${noteText(nt)})</p>
+      <p class="klein" style="margin-bottom:18px;">Lösungen genutzt: ${x.used} von ${s.lekt.length} · Gesamtnote: <b>${(noteGesamt()).toFixed(1)}</b></p>
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+        ${letzte?`<button class="btn green gross" onclick="zurFertigSeite()">🎓 Zertifikat holen →</button>`:`<button class="btn primary gross" onclick="starteStufe(${aktiv+1})">Weiter zu Stufe ${s.id+1} →</button>`}
+        <button class="btn gross" onclick="zeigeStufen()">Alle Stufen</button></div></div>`;
+  konfetti(40);
+}
+
+/* ===== Zertifikat ===== */
+function zurFertigSeite(){
+  const snap={name:S.name||"",datum:Date.now(),gesamt:noteGesamt(),
+    stufen:STUFEN.map(s=>{const x=st(s.id);return{id:s.id,name:s.name,note:x.fertig?noteAus(x.used,s.lekt.length):null};})};
+  localStorage.setItem("shelltrainer_zert",JSON.stringify(snap));
+  location.href="../fertig/"+(S.name?("?name="+encodeURIComponent(S.name)):"");
+}
+function zeigeZert(){
+  aktiv=null;document.getElementById("ortBadge").textContent="Zertifikat";
+  const heute=new Date().toLocaleDateString("de-DE",{day:"2-digit",month:"long",year:"numeric"});
+  const zeilen=STUFEN.map(s=>{const x=st(s.id);const n=x.fertig?noteAus(x.used,s.lekt.length):null;
+    return `<tr><td class="l">Stufe ${s.id} · ${s.name}</td><td class="n">${n==null?"—":n.toFixed(1)}</td><td>${noteText(n)}</td></tr>`;}).join("");
+  const g=noteGesamt();
+  document.getElementById("inhalt").innerHTML=`
+    <div class="no-print" style="margin-bottom:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+      <button class="btn" onclick="zeigeStufen()">← Zurück</button>
+      <span class="klein">Trag deinen Namen ein, dann ʼSpeichern / Druckenʼ → als PDF sichern.</span></div>
+    <div class="no-print" style="margin-bottom:14px;"><input id="zname" placeholder="Dein Name" value="${(S.name||"").replace(/"/g,"&quot;")}"
+      oninput="S.name=this.value;speichern();document.getElementById('zn').textContent=this.value||'………………'"
+      style="font-size:16px;padding:11px 14px;width:280px;"></div>
+    <div class="zert" id="zert">
+      <canvas class="matrixrain" id="mrain"></canvas>
+      <div class="sub">Roboterarm-Workshop · Terminal-Schule</div>
+      <h1>🎓 Zertifikat</h1>
+      <div class="vor">Hiermit wird bestätigt, dass</div>
+      <div class="name" id="zn">${(S.name||"………………")}</div>
+      <div class="vor">die Kommandozeile gemeistert hat.</div>
+      <table><tr><th class="l">Stufe</th><th>Note</th><th>Bewertung</th></tr>${zeilen}</table>
+      <div class="gesamt">Gesamtnote: <b>${g==null?"—":g.toFixed(1)}</b> &nbsp; <span class="dim">(${noteText(g)})</span></div>
+      <div class="siegel">🤖</div>
+      <div class="ort">MakerLab FFM</div>
+      <div class="datum">Ausgestellt am ${heute}</div>
+    </div>
+    <div class="zert-aktionen" style="text-align:center;margin-top:16px;">
+      <button class="btn green gross" onclick="window.print()">🖨️ Als PDF speichern / Drucken</button></div>`;
+  startMatrix();
+}
+function startMatrix(){
+  const c=document.getElementById("mrain");if(!c)return;const z=c.parentElement;
+  c.width=z.clientWidth;c.height=z.clientHeight;const ctx=c.getContext("2d");
+  const zeichen="01ﾊﾐﾋｰｳ$+*<>=lscdgrep".split(""),sp=14,cols=Math.max(1,Math.floor(c.width/sp));
+  const y=Array(cols).fill(0).map(()=>Math.random()*c.height);
+  clearInterval(c._t);
+  c._t=setInterval(()=>{
+    if(!c.isConnected){clearInterval(c._t);return;}
+    ctx.fillStyle="rgba(5,8,10,.18)";ctx.fillRect(0,0,c.width,c.height);
+    ctx.fillStyle="#39ff95";ctx.font=sp+"px ui-monospace,monospace";
+    for(let i=0;i<cols;i++){ctx.fillText(zeichen[Math.floor(Math.random()*zeichen.length)],i*sp,y[i]);
+      y[i]=(y[i]>c.height&&Math.random()>.975)?0:y[i]+sp;}
+  },60);
+}
+
+function konfetti(n){const emo=["🎉","⭐","🟦","🟪","🟩","✨","🤖"];for(let i=0;i<n;i++){const d=document.createElement("div");d.className="konfetti";d.textContent=emo[i%emo.length];d.style.left=Math.random()*100+"vw";d.style.animationDuration=(2+Math.random()*2)+"s";d.style.animationDelay=(Math.random()*.5)+"s";document.body.appendChild(d);setTimeout(()=>d.remove(),4500);}}
+
+if("serviceWorker" in navigator)navigator.serviceWorker.register("../sw.js").catch(()=>{});
+reset();laden();zeigeStufen();
+</script>
+</body>
+</html>
